@@ -7,7 +7,8 @@
 //トークンの型を表す値
 enum{
 	TK_NUM = 256,
-	TK_EOF
+	TK_IDENT,
+	TK_EOF,
 };
 
 //トークン型定義
@@ -28,11 +29,17 @@ typedef struct Node {
 	struct Node *rhs; //right hand side
 	int val;
 }Node;
-
+//可変長ベクター
 Node *add();
 Node *mul();
 Node *term();
 void error(int i);
+
+typedef struct{
+	void **data;
+	int capacity;
+	int len;
+}Vector;
 
 Node *new_node(int ty, Node *lhs, Node *rhs){
 	Node *node = malloc(sizeof(Node));
@@ -49,6 +56,41 @@ Node *new_node_num(int val){
 	return node;
 }
 
+Vector *new_vector(){
+	Vector *vec = malloc(sizeof(Vector));
+	vec->data = malloc(sizeof(void *) * 16);
+	vec->capacity = 16;
+	vec->len=0;
+	return vec;
+}
+void vec_push(Vector *vec, void *elem){
+	if(vec->capacity == vec->len){
+		vec->capacity *=2;
+		vec->data = realloc(vec->data,sizeof(void *) * vec->capacity);
+	}
+	vec->data[vec->len++] = elem;
+}
+
+void expect(int line, int expected, int actual){
+	if(expected == actual)return;
+	fprintf(stderr,"%d: %d expected, but got %d\n",line,expected,actual);
+	exit(1);
+}
+
+void runtest(){
+	Vector *vec = new_vector();
+	expect(__LINE__,0,vec->len);
+
+	for(int i=0;i < 100;i++)vec_push(vec,(void *)i);
+
+	expect(__LINE__,100,vec->len);
+	expect(__LINE__,0,(int)vec->data[0]);
+	expect(__LINE__,50,(int)vec->data[50]);
+	expect(__LINE__,99,(int)vec->data[99]);
+
+	printf("OK\n");
+	
+}
 int consume(int ty){
 	if(tokens[pos].ty != ty)return 0;
 	pos++;
@@ -139,6 +181,13 @@ void tokenize(char *p){
 			i++;
 			continue;
 		}
+		if('a' <= *p && *p <= 'z'){
+			tokens[i].ty = TK_IDENT;
+			tokens[i].input = p;
+			i++;
+			p++;
+			continue;
+		}
 
 		fprintf(stderr,"トークナイズできません: %s\n",p);
 		exit(1);
@@ -154,10 +203,13 @@ void error(int i){
 }
 int main(int argc,char **argv){
 	if(argc != 2){
-		fprintf(stderr,"引数の個数が正しくありません");
+		fprintf(stderr,"引数の個数が正しくありません\n");
 		return 1;
 	}
-
+	if(!strcmp(argv[1],"-test")){
+		runtest();
+		return 0;
+	}
 	tokenize(argv[1]);
 	Node *node = add();
 
