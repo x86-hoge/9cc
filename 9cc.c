@@ -20,6 +20,7 @@ typedef struct {
 int pos=0;
 enum{
 	ND_NUM = 256,	
+	ND_IDENT,
 };
 Token tokens[100];
 
@@ -28,11 +29,15 @@ typedef struct Node {
 	struct Node *lhs; //left hand side
 	struct Node *rhs; //right hand side
 	int val;
+	char name;
 }Node;
+Node *code[100];
 //可変長ベクター
 Node *add();
 Node *mul();
 Node *term();
+Node *assign();
+Node *stmt();
 void error(int i);
 
 typedef struct{
@@ -55,13 +60,22 @@ Node *new_node_num(int val){
 	node->val=val;
 	return node;
 }
-
+Node *new_node_ident(char na){
+	Node *node = malloc(sizeof(Node));
+	node->ty = ND_IDENT;
+	node->name=na;
+	return node;
+}
 Vector *new_vector(){
 	Vector *vec = malloc(sizeof(Vector));
 	vec->data = malloc(sizeof(void *) * 16);
 	vec->capacity = 16;
 	vec->len=0;
 	return vec;
+}
+
+void error_(char* name,char* input){
+	fprintf(stderr,name,input);
 }
 void vec_push(Vector *vec, void *elem){
 	if(vec->capacity == vec->len){
@@ -105,6 +119,7 @@ Node *term(){
 	}
 
 	if(tokens[pos].ty == TK_NUM)return new_node_num(tokens[pos++].val);
+	if(tokens[pos].ty == TK_IDENT)return new_node_ident((char)tokens[pos++].input);
 	printf("数値でも開きカッコでもないトークンです:%s",tokens[pos++].input);
 }
 
@@ -127,6 +142,26 @@ Node *add(){
 		else if(consume('-'))node = new_node('-',node,mul());
 		else return node;
 	}
+}
+
+void program(){
+	int i=0;
+	while(tokens[pos].ty != TK_EOF) code[i++] = stmt();
+	code[i] = NULL;
+}
+
+Node *stmt(){
+	Node *node=assign();
+	if(!consume(';')){
+	fprintf(stderr,"';'ではないトークンです:%s",tokens[pos].input);
+	exit(1);
+	}
+}
+
+Node *assign(){
+	Node* node = add();
+	if(!consume('='))assign();
+	return node;
 }
 
 void gen(Node *node){
