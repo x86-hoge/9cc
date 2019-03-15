@@ -23,8 +23,8 @@ int main(int argc,char **argv){
 	printf("	sub rsp, 208\n");
 	
 	
-	for(int i=0;code[i];i++){
-		gen(code[i]);
+	for(int i=0;(Node *)vec_code->data[i];i++){
+		gen((Node *)vec_code->data[i]);
 		printf("	pop rax\n");
 	}
 	printf("	mov rsp, rbp\n");

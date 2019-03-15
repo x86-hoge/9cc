@@ -6,6 +6,7 @@ Node *stmt();
 Node *assign();
 
 int pos=0;
+Vector *vec_code;
 
 Node *new_node(int ty, Node *lhs, Node *rhs){
 	Node *node = malloc(sizeof(Node));
@@ -91,8 +92,10 @@ Node *add(){
 
 void program(){
 	int i=0;
-	while(((Token *)vec_token->data[pos])->ty != TK_EOF) code[i++] = stmt();
-	code[i] = NULL;
+	vec_code = new_vector();
+	while(((Token *)vec_token->data[pos])->ty != TK_EOF) vec_push(vec_code,(void *)stmt());
+	vec_push(vec_code,(void *)NULL);
+	//code[i] = NULL;
 }
 
 Node *stmt(){
