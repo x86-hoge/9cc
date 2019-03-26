@@ -14,10 +14,18 @@ Token *new_token_num(int ty,int val,char* input){
 	tkn->input=input;
 	return tkn;
 }
+Token *new_token_ident(int ty,char* input,char* name){
+	Token *tkn = malloc(sizeof(Token));
+	tkn->ty=ty;
+	tkn->input=input;
+	tkn->name=name;
+	return tkn;
+}
 
 Vector *vec_token;
 
 void tokenize(char *p){
+	int strcnt;
 	vec_token=new_vector();
 	int i = 0;
 	while(*p){
@@ -27,8 +35,7 @@ void tokenize(char *p){
 			continue;
 		}
 
-		if(*p == '+' || *p == '-'|| *p == '*'|| *p == '/' 
-				|| *p == '(' || *p == ')' || *p == '=' || *p == ';'){
+		if(strchr("+-*/;=()!",*p)){
 			vec_push(vec_token,(void *)new_token(*p,p));
 			i++;
 			p++;
@@ -40,12 +47,11 @@ void tokenize(char *p){
 			i++;
 			continue;
 		}
-		if('a' <= *p && *p <= 'z'){
-			//tokens[i].ty = TK_IDENT;
-			//tokens[i].input = p;
-			vec_push(vec_token,(void *)new_token(TK_IDENT,p));
+		if(isalpha(*p)){ //文字探し
+			for(strcnt=1;isalpha(*(strcnt+p));strcnt++);
+			vec_push(vec_token,(void *)new_token_ident(TK_IDENT, p,strndup(p,strcnt)));
 			i++;
-			p++;
+			p+=strcnt;
 			continue;
 		}
 

@@ -5,7 +5,7 @@ void gen_lval(Node *node){
 		fprintf(stderr,"代入の左辺値が変数ではありません");
 		exit(1);
 	}
-	int offset = ('z' - node->name+1)*8;
+	int offset = ('z' - node->name+1)*8; 
 	printf("	mov rax, rbp\n");
 	printf("	sub rax, %d\n",offset);
 	printf("	push rax\n");
@@ -41,6 +41,17 @@ void gen(Node *node){
 
 	printf("	pop rdi\n");
 	printf("	pop rax\n");
+
+	if(node->ty == ND_EQ){
+		printf("	cmp rdi, rax\n");
+		printf("	sete al\n");
+		printf("	movzb rax, al\n");
+	}
+	else if(node->ty == ND_NEQ){
+		printf("	cmp rdi, rax\n");
+		printf("	setne al\n");
+		printf("	movzb rax, al\n");//５６ビットをクリア
+	}
 
 	switch(node->ty){
 		case '+':
