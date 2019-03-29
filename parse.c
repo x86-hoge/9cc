@@ -26,7 +26,7 @@ Node *new_node_num(int val){
 Node *new_node_ident(char* na){
 	Node *node = malloc(sizeof(Node));
 	node->ty = ND_IDENT;
-	node->name=na;
+	node->name=*na;
 	return node;
 }
 
@@ -65,7 +65,7 @@ Node *term(){
 	if(((Token *)vec_token->data[pos])->ty == TK_NUM)
 		return new_node_num(((Token *)vec_token->data[pos++])->val);//数値
 	if(((Token *)vec_token->data[pos])->ty == TK_IDENT)
-		return new_node_ident(((Token *)vec_token->data[pos++])->name);//変数名
+		return new_node_ident(((Token *)vec_token->data[pos++])->input);//変数名
 	fprintf(stderr,"数値でも開きカッコでもないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
 	exit(1);
 }
