@@ -28,6 +28,10 @@ void gen(Node *node){
 		printf("	push rax\n");
 		return;
 	}
+	if(node->ty == ND_FUNC){
+		printf("	call %s\n",node->lhs->name);
+		return;
+	}
 
 	if(node->ty == '='){
 		gen_lval(node->lhs);
@@ -39,9 +43,10 @@ void gen(Node *node){
 		printf("	push rdi\n");
 		return;
 	}
-	
-	gen(node->lhs);
-	gen(node->rhs);
+	if(node->ty != ND_FUNC){
+		gen(node->lhs);
+		gen(node->rhs);
+	}
 
 	printf("	pop rdi\n");
 	printf("	pop rax\n");

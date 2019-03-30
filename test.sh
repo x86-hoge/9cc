@@ -31,4 +31,5 @@ try 1  "20!=12;"
 try 1  "10==(5+5);"
 try 0  "1==2;"
 try 10 "a=1;b=9;a+b;"
+try 20 "val=3;test=2;num=15;val+test+num;"
 echo OK

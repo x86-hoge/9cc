@@ -113,7 +113,7 @@ Node *stmt(){
 
 Node *assign(){
 	Node* node = add();
-	//if(consume('('))if(consume(')'))return new_node();//関数
+	if(consume('('))if(consume(')'))return new_node(ND_FUNC,node,NULL);//関数
 	for(;;){
 		if(consume('!')){
 			if(consume('='))

@@ -10,16 +10,6 @@ int main(int argc,char **argv){
 		runtest();
 		return 0;
 	}
-	if(!strcmp(argv[1],"-functest")){
-		printf(".intel_syntax noprefix\n");
-		printf(".global main\n");
-		printf("main:\n");
-		printf("	mov eax, 4\n");
-		printf("	mov edi, 5\n");
-		printf("	call foo\n");
-		printf("	ret\n");
-		return 0;
-	}
 
 	tokenize(argv[1]);//トークンに分割
 	program();//パース
