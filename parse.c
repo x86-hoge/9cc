@@ -4,10 +4,13 @@ Node *mul();
 Node *add();
 Node *stmt();
 Node *assign();
+void checkval(Node *node);
 
 int pos=0;
 Vector *vec_code;
-Map *variable_map;
+
+Map *val_map;
+int val_cnt;
 
 Node *new_node(int ty, Node *lhs, Node *rhs){
 	Node *node = malloc(sizeof(Node));
@@ -23,10 +26,10 @@ Node *new_node_num(int val){
 	node->val=val;
 	return node;
 }
-Node *new_node_ident(char* na){
+Node *new_node_ident(char* name){
 	Node *node = malloc(sizeof(Node));
 	node->ty = ND_IDENT;
-	node->name=*na;
+	node->name=name;
 	return node;
 }
 
@@ -65,7 +68,7 @@ Node *term(){
 	if(((Token *)vec_token->data[pos])->ty == TK_NUM)
 		return new_node_num(((Token *)vec_token->data[pos++])->val);//数値
 	if(((Token *)vec_token->data[pos])->ty == TK_IDENT)
-		return new_node_ident(((Token *)vec_token->data[pos++])->input);//変数名
+		return new_node_ident(((Token *)vec_token->data[pos++])->name);//変数名
 	fprintf(stderr,"数値でも開きカッコでもないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
 	exit(1);
 }
@@ -92,7 +95,8 @@ Node *add(){
 }
 
 void program(){
-	//variable_map = new_map();
+	val_map = new_map();
+	val_cnt=1;
 	vec_code = new_vector();
 	while(((Token *)vec_token->data[pos])->ty != TK_EOF) vec_push(vec_code,(void *)stmt());
 	vec_push(vec_code,(void *)NULL);
@@ -109,6 +113,7 @@ Node *stmt(){
 
 Node *assign(){
 	Node* node = add();
+	//if(consume('('))if(consume(')'))return new_node();//関数
 	for(;;){
 		if(consume('!')){
 			if(consume('='))
@@ -121,9 +126,16 @@ Node *assign(){
 
 	if(consume('=')){
 		if(consume('='))return new_node(ND_EQ,node,assign());//==
-			node = new_node('=',node,assign());
-			//map_put(variable_map, node->lhs->name, (void *) node->rhs->val);
+		checkval(node);
+		node = new_node('=',node,assign());
 	}
 	else return node;
+	}
+}
+
+void checkval(Node *node){
+	if(!map_get(val_map,node->name)){
+		map_put(val_map, node->name,(void *)(val_cnt*8));
+		val_cnt++;
 	}
 }

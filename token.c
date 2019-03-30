@@ -25,7 +25,6 @@ Token *new_token_ident(int ty,char* input,char* name){
 Vector *vec_token;
 
 void tokenize(char *p){
-	int strcnt;
 	vec_token=new_vector();
 	int i = 0;
 	while(*p){
@@ -48,8 +47,12 @@ void tokenize(char *p){
 			continue;
 		}
 		if(isalpha(*p)){ //文字探し
-			for(strcnt=1;isalpha(*(strcnt+p));strcnt++);
-			vec_push(vec_token,(void *)new_token_ident(TK_IDENT, p,strndup(p,strcnt)));
+			int strcnt=1;
+			while(isalpha(p[strcnt]))strcnt++;
+			char *val=malloc(sizeof(char) * strcnt+1);
+			strncpy(val,p,strcnt);//変数名部分をトークン化
+			val[strcnt]='\0';//終端
+			vec_push(vec_token,(void *)new_token_ident(TK_IDENT,p,val));
 			i++;
 			p+=strcnt;
 			continue;

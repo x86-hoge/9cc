@@ -10,6 +10,16 @@ int main(int argc,char **argv){
 		runtest();
 		return 0;
 	}
+	if(!strcmp(argv[1],"-functest")){
+		printf(".intel_syntax noprefix\n");
+		printf(".global main\n");
+		printf("main:\n");
+		printf("	mov eax, 4\n");
+		printf("	mov edi, 5\n");
+		printf("	call foo\n");
+		printf("	ret\n");
+		return 0;
+	}
 
 	tokenize(argv[1]);//トークンに分割
 	program();//パース
@@ -20,13 +30,14 @@ int main(int argc,char **argv){
 
 	printf("	push rbp\n");
 	printf("	mov rbp, rsp\n");
-	printf("	sub rsp, 208\n");
+	printf("	sub rsp, %d\n",(val_cnt-1)*8);
 	
 	
 	for(int i=0;(Node *)vec_code->data[i];i++){
 		gen((Node *)vec_code->data[i]);
 		printf("	pop rax\n");
 	}
+	
 	printf("	mov rsp, rbp\n");
 	printf("	pop rbp\n");
 	printf("	ret\n");
