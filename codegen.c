@@ -6,7 +6,7 @@ void gen_lval(Node *node){
 		exit(1);
 	}
 	if(!map_get(val_map,node->name)){
-		fprintf(stderr,"未定義の変数です\n");
+		fprintf(stderr,"未定義の変数です:%s\n",node->name);
 		exit(1);
 	}
 	int offset = (int)map_get(val_map,node->name); 
@@ -29,6 +29,13 @@ void gen(Node *node){
 		return;
 	}
 	if(node->ty == ND_FUNC){
+		if(node->rhs != NULL){
+			char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
+			Vector *arg = node->rhs->args;
+			for(int i=0;i<6 && arg->data[i] != NULL;i++)
+				printf("	mov %s, %d\n",rgsr[i],(int)arg->data[i]);
+		}
+
 		printf("	call %s\n",node->lhs->name);
 		return;
 	}

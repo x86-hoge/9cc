@@ -13,34 +13,45 @@ typedef struct {
 	int ty;
 	int val;
 	char *input;
+	char *name;
 }Token;
 
 enum{
 	ND_NUM = 256,	
 	ND_IDENT,
+	ND_EQ,
+	ND_NEQ,
+	ND_FUNC,
+	ND_ARG,
 };
+
 extern int pos;
-typedef struct Node {
-	int ty;
-	struct Node *lhs; //left hand side
-	struct Node *rhs; //right hand side
-	int val;
-	char name;
-}Node;
-extern Node *code[];
+
 typedef struct{
 	void **data;
 	int capacity;
 	int len;
 }Vector;
 
+typedef struct Node {
+	int ty;
+	struct Node *lhs; //left hand side
+	struct Node *rhs; //right hand side
+	int val;
+	char *name;
+	Vector *args;
+}Node;
+
+extern Node *code[];
+
 typedef struct{
 	Vector *keys;
 	Vector *vals;
 }Map;
 
+extern Map *val_map;
 
-Node *code[100];
+extern int val_cnt;
 
 Node *new_node(int ty, Node *lhs, Node *rhs);
 
@@ -53,6 +64,8 @@ Vector *new_vector();
 void vec_push(Vector *vec, void *elem);
 
 extern Vector *vec_token;
+
+extern Vector *vec_code;
 
 Map *new_map();
 

@@ -8,7 +8,6 @@ void checkval(Node *node);
 
 int pos=0;
 Vector *vec_code;
-
 Map *val_map;
 int val_cnt;
 
@@ -30,6 +29,12 @@ Node *new_node_ident(char* name){
 	Node *node = malloc(sizeof(Node));
 	node->ty = ND_IDENT;
 	node->name=name;
+	return node;
+}
+Node *new_node_arg(){
+	Node *node = malloc(sizeof(Node));
+	node->ty = ND_ARG;
+	node->args=new_vector();
 	return node;
 }
 
@@ -95,9 +100,9 @@ Node *add(){
 }
 
 void program(){
-	val_map = new_map();
-	val_cnt=1;
-	vec_code = new_vector();
+	val_map = new_map();//変数マップ
+	val_cnt=0;//変数カウント
+	vec_code = new_vector();//コード格納
 	while(((Token *)vec_token->data[pos])->ty != TK_EOF) vec_push(vec_code,(void *)stmt());
 	vec_push(vec_code,(void *)NULL);
 }
@@ -113,7 +118,17 @@ Node *stmt(){
 
 Node *assign(){
 	Node* node = add();
-	if(consume('('))if(consume(')'))return new_node(ND_FUNC,node,NULL);//関数
+
+	if(node->ty == ND_IDENT && consume('(')){
+		if(!consume(')')){
+			node = new_node(ND_FUNC,node,new_node_arg());//関数
+			while(!consume(')')){
+				vec_push(node->rhs->args,((Token *)vec_token->data[pos++])->val);
+			}
+			return node;
+		}else
+			return new_node(ND_FUNC,node,NULL);
+	}
 	for(;;){
 		if(consume('!')){
 			if(consume('='))
@@ -129,13 +144,14 @@ Node *assign(){
 		checkval(node);
 		node = new_node('=',node,assign());
 	}
+
 	else return node;
 	}
 }
 
 void checkval(Node *node){
 	if(!map_get(val_map,node->name)){
-		map_put(val_map, node->name,(void *)(val_cnt*8));
 		val_cnt++;
+		map_put(val_map, node->name,(void *)(val_cnt*8));
 	}
 }

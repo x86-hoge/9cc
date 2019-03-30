@@ -20,7 +20,7 @@ int main(int argc,char **argv){
 
 	printf("	push rbp\n");
 	printf("	mov rbp, rsp\n");
-	printf("	sub rsp, %d\n",(val_cnt-1)*8);
+	printf("	sub rsp, %d\n",val_cnt*8);
 	
 	
 	for(int i=0;(Node *)vec_code->data[i];i++){
