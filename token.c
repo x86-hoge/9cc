@@ -34,7 +34,7 @@ void tokenize(char *p){
 			continue;
 		}
 
-		if(strchr("+-*/;=()!",*p)){
+		if(strchr("+-*/;=()!{}",*p)){
 			vec_push(vec_token,(void *)new_token(*p,p));
 			i++;
 			p++;

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 enum{
 	TK_NUM = 256,
@@ -49,9 +50,12 @@ typedef struct{
 	Vector *vals;
 }Map;
 
-extern Map *val_map;
-
-extern int val_cnt;
+typedef struct{
+	Node *name;//関数名
+	Map *map;//変数保存
+	int cnt;//変数カウント
+	Vector *code;//コード格納
+}Func;
 
 Node *new_node(int ty, Node *lhs, Node *rhs);
 
@@ -59,13 +63,13 @@ Node *new_node_ident(char* na);
 
 Node *new_node_num(int val);
 
+Node *func_parse(Node *node);
+
 Vector *new_vector();
 
 void vec_push(Vector *vec, void *elem);
 
 extern Vector *vec_token;
-
-extern Vector *vec_code;
 
 Map *new_map();
 
@@ -77,10 +81,15 @@ void expect(int line, int expected, int actual);
 
 void runtest();
 
-void program();
+void program(Map *map,int *cnt,Vector *code);
 
 void gen_lval(Node *node);
 
 void gen(Node *node);
 
 void tokenize(char *p);
+
+int consume(int ty);
+
+void con();//関数
+void set_valmap(Map *map);

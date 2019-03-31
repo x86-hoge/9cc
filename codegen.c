@@ -1,15 +1,19 @@
 #include "9cc.h"
+Map *gen_map;
 
+void set_valmap(Map *map){
+	gen_map = map;
+}
 void gen_lval(Node *node){
 	if(node->ty != ND_IDENT){
 		fprintf(stderr,"代入の左辺値が変数ではありません");
 		exit(1);
 	}
-	if(!map_get(val_map,node->name)){
+	if(!map_get(gen_map,node->name)){
 		fprintf(stderr,"未定義の変数です:%s\n",node->name);
 		exit(1);
 	}
-	int offset = (int)map_get(val_map,node->name); 
+	int offset = (int)(intptr_t)map_get(gen_map,node->name); 
 	printf("	mov rax, rbp\n");
 	printf("	sub rax, %d\n",offset);
 	printf("	push rax\n");
@@ -33,7 +37,7 @@ void gen(Node *node){
 			char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
 			Vector *arg = node->rhs->args;
 			for(int i=0;i<6 && arg->data[i] != NULL;i++)
-				printf("	mov %s, %d\n",rgsr[i],(int)arg->data[i]);
+				printf("	mov %s, %d\n",rgsr[i],(int)(intptr_t)arg->data[i]);
 		}
 
 		printf("	call %s\n",node->lhs->name);

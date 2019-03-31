@@ -4,13 +4,11 @@ Node *mul();
 Node *add();
 Node *stmt();
 Node *assign();
+Node *func(Node *node);
 void checkval(Node *node);
-
-int pos=0;
 Vector *vec_code;
 Map *val_map;
-int val_cnt;
-
+int *val_cnt;
 Node *new_node(int ty, Node *lhs, Node *rhs){
 	Node *node = malloc(sizeof(Node));
 	node->ty = ty;
@@ -98,15 +96,13 @@ Node *add(){
 		else return node;
 	}
 }
-
-void program(){
-	val_map = new_map();//変数マップ
-	val_cnt=0;//変数カウント
-	vec_code = new_vector();//コード格納
-	while(((Token *)vec_token->data[pos])->ty != TK_EOF) vec_push(vec_code,(void *)stmt());
+void program(Map *map,int *cnt,Vector *code){
+	val_map = map;//変数マップ
+	val_cnt=cnt;//変数カウント
+	vec_code = code;//コード格納
+	while(((Token *)vec_token->data[pos])->ty != '}')vec_push(vec_code,(void *)stmt());
 	vec_push(vec_code,(void *)NULL);
 }
-
 Node *stmt(){
 	Node *node = assign();
 	if(!consume(';')){
@@ -118,17 +114,8 @@ Node *stmt(){
 
 Node *assign(){
 	Node* node = add();
-
-	if(node->ty == ND_IDENT && consume('(')){
-		if(!consume(')')){
-			node = new_node(ND_FUNC,node,new_node_arg());//関数
-			while(!consume(')')){
-				vec_push(node->rhs->args,((Token *)vec_token->data[pos++])->val);
-			}
-			return node;
-		}else
-			return new_node(ND_FUNC,node,NULL);
-	}
+	node = func_parse(node);
+	
 	for(;;){
 		if(consume('!')){
 			if(consume('='))
@@ -151,7 +138,22 @@ Node *assign(){
 
 void checkval(Node *node){
 	if(!map_get(val_map,node->name)){
-		val_cnt++;
-		map_put(val_map, node->name,(void *)(val_cnt*8));
+		*val_cnt+=1;
+		map_put(val_map, node->name,(void *)(intptr_t)(*val_cnt*8));
 	}
+}
+
+Node *func_parse(Node *node){
+
+	if(node->ty == ND_IDENT && consume('(')){
+		if(!consume(')')){
+			node = new_node(ND_FUNC,node,new_node_arg());//関数
+			while(!consume(')')){
+				vec_push(node->rhs->args,((Token *)vec_token->data[pos++])->val);
+			}
+			return node;
+		}else
+			return new_node(ND_FUNC,node,NULL);
+	}
+	return node;
 }
