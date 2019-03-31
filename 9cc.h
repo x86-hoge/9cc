@@ -18,7 +18,7 @@ typedef struct {
 }Token;
 
 enum{
-	ND_NUM = 256,	
+	ND_NUM = 256,
 	ND_IDENT,
 	ND_EQ,
 	ND_NEQ,
@@ -69,7 +69,9 @@ Vector *new_vector();
 
 void vec_push(Vector *vec, void *elem);
 
-extern Vector *vec_token;
+extern Vector *vec_token;//トークンを格納する
+
+extern Vector *vec_func;//関数を格納する
 
 Map *new_map();
 
@@ -91,5 +93,10 @@ void tokenize(char *p);
 
 int consume(int ty);
 
-void con();//関数
-void set_valmap(Map *map);
+Func *con();//関数
+
+void set_valmap(Map *map);//マップを関数に渡す
+
+void built(Func *func);
+
+void funcsp();

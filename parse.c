@@ -114,14 +114,24 @@ Node *stmt(){
 
 Node *assign(){
 	Node* node = add();
-	node = func_parse(node);
+	
+	if(node->ty == ND_IDENT && consume('(')){
+		if(!consume(')')){
+			node = new_node(ND_FUNC,node,new_node_arg());//関数
+			while(!consume(')')){
+				vec_push(node->rhs->args,(void *)(intptr_t)((Token *)vec_token->data[pos++])->val);
+			}
+			return node;
+		}else
+			return new_node(ND_FUNC,node,NULL);
+	}
 	
 	for(;;){
 		if(consume('!')){
 			if(consume('='))
 				return new_node(ND_NEQ,node,assign());//!=
 			else{
-				fprintf(stderr,"式が不正です");
+				fprintf(stderr,"式が不正です\n");
 				exit(1);
 			}
 		}
@@ -149,11 +159,14 @@ Node *func_parse(Node *node){
 		if(!consume(')')){
 			node = new_node(ND_FUNC,node,new_node_arg());//関数
 			while(!consume(')')){
-				vec_push(node->rhs->args,((Token *)vec_token->data[pos++])->val);
+				vec_push(node->rhs->args,((Token *)vec_token->data[pos++])->name);
 			}
 			return node;
 		}else
 			return new_node(ND_FUNC,node,NULL);
 	}
-	return node;
+	else{
+	fprintf(stderr,"構文エラー:カッコがありません\n");
+	exit(1);
+	}
 }
