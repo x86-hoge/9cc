@@ -1,4 +1,5 @@
 #!/bin/bash
+
 try(){
 	expected="$1"
 	input="$2"
@@ -32,4 +33,5 @@ try 1  "main(){10==(5+5);                       }"
 try 0  "main(){1==2;                            }"
 try 10 "main(){a=1;b=9;a+b;                     }"
 try 20 "main(){val=3;test=2;num=15;val+test+num;}"
+try 15 "main(){sd=10;sd=sd+10/2; return sd;}"
 echo OK

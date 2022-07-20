@@ -3,6 +3,7 @@ Node *term();
 Node *mul();
 Node *add();
 Node *stmt();
+Node *expr();
 Node *assign();
 Node *func(Node *node);
 void checkval(Node *node);
@@ -104,12 +105,26 @@ void program(Map *map,int *cnt,Vector *code){
 	vec_push(vec_code,(void *)NULL);
 }
 Node *stmt(){
-	Node *node = assign();
+	Node *node;
+
+	if (consume(TK_RETURN)) {
+    	node = calloc(1, sizeof(Node));
+    	node->ty = ND_RETURN;
+    	node->lhs = expr();
+  	}else {
+    	node = expr();
+  	}
+
 	if(!consume(';')){
-	fprintf(stderr,"';'ではないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
-	exit(1);
+		fprintf(stderr,"';'ではないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
+		exit(1);
 	}
+	
 	return node;
+}
+
+Node *expr() {
+  return assign();
 }
 
 Node *assign(){

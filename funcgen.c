@@ -23,6 +23,7 @@ void built(Func *func){
 		gen((Node *)func->code->data[i]);
 		printf("	pop rax\n");
 	}
+	
 	printf("	mov rsp, rbp\n");
 	printf("	pop rbp\n");
 	printf("	ret\n");

@@ -8,6 +8,9 @@ enum{
 	TK_NUM = 256,
 	TK_IDENT,
 	TK_EOF,
+	TK_RETURN,
+	TK_IF,
+	TK_ELSE,
 };
 
 typedef struct {
@@ -24,6 +27,9 @@ enum{
 	ND_NEQ,
 	ND_FUNC,
 	ND_ARG,
+	ND_RETURN,
+	ND_IF,
+	ND_ELSE,
 };
 
 extern int pos;
