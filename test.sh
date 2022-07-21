@@ -42,4 +42,5 @@ try 30 "main(){a=29;if(a!=1){a=a+1;}a;}"
 try 10 "main(){for(i=5; i!=10; i=i+1){12;}i;}"
 try 55 "main(){a=0;for(i=1; i!=11; i=i+1){a=a+i;}return a;}"
 try 46 "main(){a=0;for(i=1; i!=11; i=i+1){if(a!=45){a=a+i;}else{a=a+1;}}a;}"
+try 10 "main(){for(i=5; i!=10; i=i+1){echo(i);}i;}"
 echo OK

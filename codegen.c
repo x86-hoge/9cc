@@ -109,14 +109,15 @@ void gen(Node *node){
     }
 
     if(node->ty == ND_FUNC){
-        if(node->rhs != NULL){
+        if(node->args != NULL){
             char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
-            Vector *arg = node->rhs->args;
-            for(int i=0;i<6 && arg->data[i] != NULL;i++)
-                printf("    mov %s, %d\n",rgsr[i],(int)(intptr_t)arg->data[i]);
+            for(int i=0;i<6 && node->args->data[i];i++){
+                gen((Node *)node->args->data[i]);
+                printf("    pop rax\n");
+                printf("    mov %s, rax\n",rgsr[i]);
+            }
         }
-
-        printf("    call %s\n",node->lhs->name);
+        printf("    call %s\n",node->name);
         return;
     }
 

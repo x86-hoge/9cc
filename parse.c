@@ -70,6 +70,7 @@ int consume(int ty){
 }
 
 Node *term(){
+	
     if(consume('(')){
         Node *node = add();
         if(!consume(')')){
@@ -79,10 +80,25 @@ Node *term(){
         return node;
     }
 
-    if(((Token *)vec_token->data[pos])->ty == TK_NUM)
-        return new_node_num(((Token *)vec_token->data[pos++])->val);//数値
-    if(((Token *)vec_token->data[pos])->ty == TK_IDENT)
-        return new_node_ident(((Token *)vec_token->data[pos++])->name);//変数名
+    if(((Token *)vec_token->data[pos])->ty == TK_NUM){
+		return new_node_num(((Token *)vec_token->data[pos++])->val);//数値
+	}
+    if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
+		Token *tkn = vec_token->data[pos++];
+		Vector *vec = new_vector();
+		if(consume('(')){
+			Node *node = calloc(1, sizeof(Node));
+			node->ty   = ND_FUNC;
+			node->name =tkn->name;
+			
+			while(!consume(')')){ vec_push(vec,(void *)expr()); }
+			vec_push(vec,(void *)NULL);
+			node->args = vec;
+			return node;
+		}
+		return new_node_ident(tkn->name);//変数名
+	}
+	
     fprintf(stderr,"数値でも開きカッコでもないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
     exit(1);
 }
@@ -208,18 +224,7 @@ Node *expr() {
 
 Node *assign(){
     Node* node = add();
-    
-    if(node->ty == ND_IDENT && consume('(')){
-        if(!consume(')')){
-            node = new_node(ND_FUNC,node,new_node_arg());//関数
-            while(!consume(')')){
-                vec_push(node->rhs->args,(void *)(intptr_t)((Token *)vec_token->data[pos++])->val);
-            }
-            return node;
-        }else
-            return new_node(ND_FUNC,node,NULL);
-    }
-    
+
     for(;;){
         if(consume('!')){
             if(consume('='))
@@ -231,7 +236,35 @@ Node *assign(){
         }
 
         if(consume('=')){
-            if(consume('='))return new_node(ND_EQ,node,assign());//==
+            if(consume('=')){
+				return new_node(ND_EQ,node,assign());//==
+			}
+            checkval(node);
+            node = new_node('=',node,assign());
+        }
+
+    else return node;
+    }
+}
+
+Node *relational(){
+	Node* node = add();
+    for(;;){
+		if(consume('(')){
+        if(consume('!')){
+            if(consume('='))
+                return new_node(ND_NEQ,node,assign());//!=
+            else{
+                fprintf(stderr,"式が不正です\n");
+                exit(1);
+            }
+        }
+		}
+
+        if(consume('=')){
+            if(consume('=')){
+				return new_node(ND_EQ,node,assign());//==
+			}
             checkval(node);
             node = new_node('=',node,assign());
         }
@@ -250,6 +283,7 @@ void checkval(Node *node){
 Node *func_parse(Node *node){
 
     if(node->ty == ND_IDENT && consume('(')){
+		
         if(!consume(')')){
             node = new_node(ND_FUNC,node,new_node_arg());//関数
             while(!consume(')')){
