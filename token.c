@@ -43,7 +43,7 @@ void tokenize(char *p){
 			continue;
 		}
 
-		if(strchr("+-*/;=()!{}",*p)){
+		if(strchr("+-*/;=()!{}<>",*p)){
 			vec_push(vec_token,(void *)new_token(*p,p));
 			i++;
 			p++;
@@ -78,6 +78,12 @@ void tokenize(char *p){
 			vec_push(vec_token,(void *)new_token(TK_WHILE,p));
  			i++;
   			p += 5;
+  			continue;
+		}
+		if (strncmp(p, "for", 3) == 0 && !is_alnum(p[3])) {
+			vec_push(vec_token,(void *)new_token(TK_FOR,p));
+ 			i++;
+  			p += 3;
   			continue;
 		}
 

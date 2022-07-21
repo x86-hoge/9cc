@@ -1,20 +1,20 @@
 #!/bin/bash
 
 try(){
-	expected="$1"
-	input="$2"
+    expected="$1"
+    input="$2"
 
-	./9cc "$input" > tmp.s
-	gcc -o tmp tmp.s sample.o
-	./tmp
-	actual="$?"
+    ./9cc "$input" > tmp.s
+    gcc -o tmp tmp.s sample.o
+    ./tmp
+    actual="$?"
 
-	if [ "$actual" = "$expected" ]; then
-		echo "$input => $actual"
-	else
-		echo "$expected expected, but got $actual"
-		exit 1
-	fi
+    if [ "$actual" = "$expected" ]; then
+        echo "$input => $actual"
+    else
+        echo "$expected expected, but got $actual"
+        exit 1
+    fi
 }
 
 try 0  "main(){0;}" 
@@ -38,5 +38,8 @@ try 10 "main(){a=20;if(1==1){10;}}"
 try 1  "main(){if(1==1){5;}else{1;}if(1==0){1;4+1;}else{100-99;}}"
 try 10 "main(){a=1;while(a!=10){a=a+1;}}"
 try 60 "main(){a=1;while(a!=10){a=a+1;}a+50;}"
-try 30 "main(){a=1;if(a==10){a=a+1;}echo(30);}"
+try 30 "main(){a=29;if(a!=1){a=a+1;}a;}"
+try 10 "main(){for(i=5; i!=10; i=i+1){12;}i;}"
+try 55 "main(){a=0;for(i=1; i!=11; i=i+1){a=a+i;}return a;}"
+try 46 "main(){a=0;for(i=1; i!=11; i=i+1){if(a!=45){a=a+i;}else{a=a+1;}}a;}"
 echo OK
