@@ -5,7 +5,7 @@ try(){
 	input="$2"
 
 	./9cc "$input" > tmp.s
-	gcc -o tmp tmp.s
+	gcc -o tmp tmp.s sample.o
 	./tmp
 	actual="$?"
 
@@ -38,4 +38,5 @@ try 10 "main(){a=20;if(1==1){10;}}"
 try 1  "main(){if(1==1){5;}else{1;}if(1==0){1;4+1;}else{100-99;}}"
 try 10 "main(){a=1;while(a!=10){a=a+1;}}"
 try 60 "main(){a=1;while(a!=10){a=a+1;}a+50;}"
+try 30 "main(){a=1;if(a==10){a=a+1;}echo(30);}"
 echo OK

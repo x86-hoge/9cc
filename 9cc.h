@@ -12,6 +12,7 @@ enum{
 	TK_IF,
 	TK_ELSE,
 	TK_WHILE,
+	TK_FOR,
 };
 
 typedef struct {
@@ -33,6 +34,7 @@ enum{
 	ND_ELSE,
 	ND_BLOCK,
 	ND_WHILE,
+	ND_FOR,
 };
 
 extern int pos;
@@ -43,15 +45,38 @@ typedef struct{
 	int len;
 }Vector;
 
+typedef struct Node Node;
+
+
 typedef struct Node {
 	int ty;
-	struct Node *lhs; //左ノード
-	struct Node *rhs; //右ノード
-	struct Node *expr; //評価
+	Node *lhs; //左ノード
+	Node *rhs; //右ノード
+	Node *expr; 
+
+
 	int val;
 	char *name;
 	Vector *stmts;//複数式　
 	Vector *args;
+
+
+	/* 実装済 */
+  	// "if" ( cond ) then "else" els
+	// "while" ( cond ) body
+  	// "for" ( init; cond; inc ) body
+
+	Node *cond;
+  	Node *then;
+  	Node *els;
+  	Node *init;
+  	Node *inc;
+ 	Node *body;
+
+	/* 未実装 */
+  	// "do" body "while" ( cond )
+  	// "switch" ( cond ) body
+  	// "case" val ":" body
 }Node;
 
 extern Node *code[];

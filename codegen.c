@@ -39,11 +39,11 @@ void gen(Node *node){
 	}
 	if(node->ty == ND_WHILE){
 		printf(".Lbegin%d:\n",branch_label_no);
-		gen(node->expr);
+		gen(node->cond);
 		printf("	pop rax\n");
 		printf("	cmp rax, 0\n");
 		printf("	je .Lend%d\n",branch_label_no);
-		gen(node->lhs);
+		gen(node->body);
 		printf("	push rax\n");
 		printf("	jmp .Lbegin%d\n",branch_label_no);
 		printf(".Lend%d:\n",branch_label_no);
@@ -53,19 +53,19 @@ void gen(Node *node){
 
 	
 	if(node->ty == ND_IF){
-		gen(node->expr);
+		gen(node->cond);
 		printf("	pop rax\n");
 		printf("	cmp rax, 0\n");
 
-		if(node->rhs){
+		if(node->els){
 			printf("	je .Lelse%d\n",branch_label_no);
-			gen(node->lhs);
+			gen(node->then);
 			printf(".Lelse%d:\n",branch_label_no);
-			gen(node->rhs);
+			gen(node->els);
 		}
 		else{
 			printf("	je .Lend%d\n",branch_label_no);
-			gen(node->lhs);
+			gen(node->then);
 		}
 		printf("	push rax\n");
 		printf(".Lend%d:\n",branch_label_no);

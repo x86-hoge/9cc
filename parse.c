@@ -127,14 +127,14 @@ Node *stmt(){
 		node = calloc(1, sizeof(Node));
 		if(consume('(')){
     		node->ty = ND_IF;
-    		node->expr = expr();
+    		node->cond = expr(); //if([cond])
 			if(!consume(')')){
 				fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
 				exit(1);
 			}
-			node->lhs = stmt();
+			node->then = stmt();//if([cond]) [then]
 			if(consume(TK_ELSE)){
-				node->rhs = stmt();
+				node->els = stmt();//if([cond]) [then] else [els]
 			}
 		}
 		else{
@@ -143,6 +143,22 @@ Node *stmt(){
 		}
 	}
 	else if(consume(TK_WHILE)){
+		node = calloc(1, sizeof(Node));
+		if(consume('(')){
+    		node->ty = ND_WHILE;
+    		node->cond = expr();
+			if(!consume(')')){
+				fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+				exit(1);
+			}
+			node->body = stmt();
+		}
+		else{
+			fprintf(stderr,"開きカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+			exit(1);
+		}
+	}
+	else if(consume(TK_FOR)){
 		node = calloc(1, sizeof(Node));
 		if(consume('(')){
     		node->ty = ND_WHILE;
