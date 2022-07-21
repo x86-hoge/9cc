@@ -142,6 +142,22 @@ Node *stmt(){
 			exit(1);
 		}
 	}
+	else if(consume(TK_WHILE)){
+		node = calloc(1, sizeof(Node));
+		if(consume('(')){
+    		node->ty = ND_WHILE;
+    		node->expr = expr();
+			if(!consume(')')){
+				fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+				exit(1);
+			}
+			node->lhs = stmt();
+		}
+		else{
+			fprintf(stderr,"開きカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+			exit(1);
+		}
+	}
 	else{
 		if (consume(TK_RETURN)) {
     	node = calloc(1, sizeof(Node));

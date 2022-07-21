@@ -37,6 +37,19 @@ void gen(Node *node){
 		printf("	push %d\n",node->val);
 		return;
 	}
+	if(node->ty == ND_WHILE){
+		printf(".Lbegin%d:\n",branch_label_no);
+		gen(node->expr);
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+		printf("	je .Lend%d\n",branch_label_no);
+		gen(node->lhs);
+		printf("	push rax\n");
+		printf("	jmp .Lbegin%d\n",branch_label_no);
+		printf(".Lend%d:\n",branch_label_no);
+		branch_label_no++;
+		return;
+	}
 
 	
 	if(node->ty == ND_IF){

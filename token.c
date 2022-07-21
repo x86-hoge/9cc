@@ -74,6 +74,12 @@ void tokenize(char *p){
   			p += 4;
   			continue;
 		}
+		if (strncmp(p, "while", 5) == 0 && !is_alnum(p[5])) {
+			vec_push(vec_token,(void *)new_token(TK_WHILE,p));
+ 			i++;
+  			p += 5;
+  			continue;
+		}
 
 		if(isalpha(*p)){ //文字探し
 			int strcnt=1;

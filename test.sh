@@ -36,5 +36,6 @@ try 20 "main(){val=3;test=2;num=15;val+test+num;}"
 try 15 "main(){sd=10;sd=sd+10/2; return sd;}"
 try 10 "main(){a=20;if(1==1){10;}}"
 try 1  "main(){if(1==1){5;}else{1;}if(1==0){1;4+1;}else{100-99;}}"
-
+try 10 "main(){a=1;while(a!=10){a=a+1;}}"
+try 60 "main(){a=1;while(a!=10){a=a+1;}a+50;}"
 echo OK

@@ -11,6 +11,7 @@ enum{
 	TK_RETURN,
 	TK_IF,
 	TK_ELSE,
+	TK_WHILE,
 };
 
 typedef struct {
@@ -31,6 +32,7 @@ enum{
 	ND_IF,
 	ND_ELSE,
 	ND_BLOCK,
+	ND_WHILE,
 };
 
 extern int pos;
