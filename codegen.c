@@ -1,9 +1,11 @@
 #include "9cc.h"
 Map *gen_map;
+int branch_label_no = 0;
 
 void set_valmap(Map *map){
 	gen_map = map;
 }
+
 void gen_lval(Node *node){
 	if(node->ty != ND_IDENT){
 		fprintf(stderr,"代入の左辺値が変数ではありません");
@@ -19,7 +21,9 @@ void gen_lval(Node *node){
 	printf("	push rax\n");
 }
 
+/* コード発行 */
 void gen(Node *node){
+
 	if (node->ty == ND_RETURN) {
     	gen(node->lhs);
     	printf("	pop rax\n");
@@ -34,6 +38,36 @@ void gen(Node *node){
 		return;
 	}
 
+	
+	if(node->ty == ND_IF){
+		gen(node->expr);
+		printf("	pop rax\n");
+		printf("	cmp rax, 0\n");
+
+		if(node->rhs){
+			printf("	je .Lelse%d\n",branch_label_no);
+			gen(node->lhs);
+			printf(".Lelse%d:\n",branch_label_no);
+			gen(node->rhs);
+		}
+		else{
+			printf("	je .Lend%d\n",branch_label_no);
+			gen(node->lhs);
+		}
+		printf("	push rax\n");
+		printf(".Lend%d:\n",branch_label_no);
+		branch_label_no++;
+		return;
+	}
+
+	if(node->ty == ND_BLOCK){
+		for(int i=0;(Node *)node->stmts->data[i];i++){
+			gen((Node *)node->stmts->data[i]);
+			printf("	pop rax\n");
+		}
+		return;
+	}
+
 	if(node->ty == ND_IDENT){
 		gen_lval(node);
 		printf("	pop rax\n");
@@ -41,6 +75,7 @@ void gen(Node *node){
 		printf("	push rax\n");
 		return;
 	}
+
 	if(node->ty == ND_FUNC){
 		if(node->rhs != NULL){
 			char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
@@ -76,6 +111,7 @@ void gen(Node *node){
 		printf("	sete al\n");
 		printf("	movzb rax, al\n");
 	}
+	
 	else if(node->ty == ND_NEQ){
 		printf("	cmp rdi, rax\n");
 		printf("	setne al\n");

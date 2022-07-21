@@ -37,6 +37,16 @@ Node *new_node_arg(){
 	return node;
 }
 
+Vector *new_vector_stmts(){
+	Vector *vec = new_vector();
+	while(!consume('}')){
+		vec_push(vec,(void *)stmt());
+	}
+	vec_push(vec,(void *)NULL);
+	return vec;
+}
+
+
 Vector *new_vector(){
 	Vector *vec = malloc(sizeof(Vector));
 	vec->data = malloc(sizeof(void *) * 16);
@@ -107,24 +117,50 @@ void program(Map *map,int *cnt,Vector *code){
 Node *stmt(){
 	Node *node;
 
-	if (consume(TK_RETURN)) {
+	if(consume('{')){
+		node = calloc(1, sizeof(Node));
+		node->ty = ND_BLOCK;
+		node->stmts = new_vector_stmts();
+		
+	}
+	else if(consume(TK_IF)){
+		node = calloc(1, sizeof(Node));
+		if(consume('(')){
+    		node->ty = ND_IF;
+    		node->expr = expr();
+			if(!consume(')')){
+				fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+				exit(1);
+			}
+			node->lhs = stmt();
+			if(consume(TK_ELSE)){
+				node->rhs = stmt();
+			}
+		}
+		else{
+			fprintf(stderr,"開きカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+			exit(1);
+		}
+	}
+	else{
+		if (consume(TK_RETURN)) {
     	node = calloc(1, sizeof(Node));
     	node->ty = ND_RETURN;
     	node->lhs = expr();
-  	}else {
-    	node = expr();
-  	}
-
-	if(!consume(';')){
-		fprintf(stderr,"';'ではないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
-		exit(1);
+  		}
+		else{
+			node = expr();
+		}
+		if(!consume(';')){
+			fprintf(stderr,"';'ではないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
+			exit(1);
+		}
 	}
-	
 	return node;
 }
 
 Node *expr() {
-  return assign();
+	return assign();
 }
 
 Node *assign(){
@@ -151,11 +187,11 @@ Node *assign(){
 			}
 		}
 
-	if(consume('=')){
-		if(consume('='))return new_node(ND_EQ,node,assign());//==
-		checkval(node);
-		node = new_node('=',node,assign());
-	}
+		if(consume('=')){
+			if(consume('='))return new_node(ND_EQ,node,assign());//==
+			checkval(node);
+			node = new_node('=',node,assign());
+		}
 
 	else return node;
 	}

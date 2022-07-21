@@ -30,6 +30,7 @@ enum{
 	ND_RETURN,
 	ND_IF,
 	ND_ELSE,
+	ND_BLOCK,
 };
 
 extern int pos;
@@ -42,10 +43,12 @@ typedef struct{
 
 typedef struct Node {
 	int ty;
-	struct Node *lhs; //left hand side
-	struct Node *rhs; //right hand side
+	struct Node *lhs; //左ノード
+	struct Node *rhs; //右ノード
+	struct Node *expr; //評価
 	int val;
 	char *name;
+	Vector *stmts;//複数式　
 	Vector *args;
 }Node;
 
