@@ -120,15 +120,31 @@ Node *term(){
     exit(1);
 }
 
+Node *unary(){
+    if(consume('+')){
+        return term();
+    }
+    if(consume('-')){
+        return new_node('-',new_node_num(0),term());
+    }
+    if(consume('*')){
+        return new_node(ND_DEREF,unary(),NULL);
+    }
+    if(consume('&')){
+        return new_node(ND_ADDR,unary(),NULL);
+    }
+    return term();
+}
+
 Node *mul(){
-    Node *node = term();
+    Node *node = unary();
 
     for(;;){
         if(consume('*')){
-            node = new_node('*',node,term());
+            node = new_node('*',node,unary());
         }
         else if(consume('/')){
-            node = new_node('/',node,term());
+            node = new_node('/',node,unary());
         }
         else{
             return node;

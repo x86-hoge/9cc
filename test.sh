@@ -46,5 +46,6 @@ try 10 "main(){a=1;for(i=5; i!=10; i=i+1){echo(i);}i;}"
 try 5  "main(){for(i=1; i<5; i=i+1){echo(i);}i;}"
 try 6  "main(){for(i=1; i<=5; i=i+1){echo(i);}i;}"
 try 1  "main(){returna=1;ifa=1;elsea=1;fora=1;}"
-
+try 255 "main(){-1;}"
+try 10 "main(){a=10;b=&a;return *b;}"
 echo OK

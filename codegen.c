@@ -59,6 +59,17 @@ void gen(Node *node){
         printf(".Lend%d:\n",label);
         return;
     }
+    if(node->ty == ND_ADDR){
+         gen_lval(node->lhs);
+        return;
+    }
+    if(node->ty == ND_DEREF){
+        gen(node->lhs);
+        printf("    pop rax\n");
+        printf("    mov rax, [rax]\n");
+        printf("    push rax\n");
+        return;
+    }
     if(node->ty == ND_FOR){
         int label = branch_label_no;
         branch_label_no++;

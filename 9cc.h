@@ -38,6 +38,9 @@ enum{
 	ND_FOR,
 	ND_LE,
 	ND_INC,
+	ND_SUB,
+	ND_ADDR,
+	ND_DEREF,
 };
 
 extern int pos;
