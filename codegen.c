@@ -108,7 +108,7 @@ void gen(Node *node){
         return;
     }
 
-    if(node->ty == ND_FUNC){
+    if(node->ty == ND_CALL){
         if(node->args != NULL){
             char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
             for(int i=0;i<6 && node->args->data[i];i++){
@@ -140,18 +140,26 @@ void gen(Node *node){
     printf("    pop rax\n");
 
     if(node->ty == ND_EQ){
-        printf("    cmp rdi, rax\n");
+        printf("    cmp rax, rdi\n");
         printf("    sete al\n");
         printf("    movzb rax, al\n");
     }
-    
     else if(node->ty == ND_NEQ){
-        printf("    cmp rdi, rax\n");
+        printf("    cmp rax, rdi\n");
         printf("    setne al\n");
-        printf("    movzb rax, al\n");//５６ビットをクリア
+        printf("    movzb rax, al\n");//56 bit clear
     }
-
+    else if(node->ty == ND_LE){
+        printf("    cmp rax, rdi\n");
+        printf("    setle al\n");
+        printf("    movzb rax, al\n");//56 bit clear
+    }
     switch(node->ty){
+        case '<':
+            printf("    cmp rax, rdi\n");
+            printf("    setl al\n");
+            printf("    movzb rax, al\n");//56 bit clear
+            break;
         case '+':
             printf("    add rax, rdi\n");
             break;

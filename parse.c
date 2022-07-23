@@ -6,6 +6,7 @@ Node *stmt();
 Node *expr();
 Node *assign();
 Node *func(Node *node);
+Node *relational();
 void checkval(Node *node);
 Vector *vec_code;
 Map *val_map;
@@ -88,7 +89,7 @@ Node *term(){
 		Vector *vec = new_vector();
 		if(consume('(')){
 			Node *node = calloc(1, sizeof(Node));
-			node->ty   = ND_FUNC;
+			node->ty   = ND_CALL;
 			node->name =tkn->name;
 			
 			while(!consume(')')){ vec_push(vec,(void *)expr()); }
@@ -107,9 +108,15 @@ Node *mul(){
     Node *node = term();
 
     for(;;){
-        if(consume('*'))node = new_node('*',node,term());
-        else if(consume('/'))node = new_node('/',node,term());
-        else return node;
+        if(consume('*')){
+            node = new_node('*',node,term());
+        }
+        else if(consume('/')){
+            node = new_node('/',node,term());
+        }
+        else{
+            return node;
+        }
     }
 }
 
@@ -118,9 +125,15 @@ Node *add(){
     Node *node = mul();
 
     for(;;){
-        if(consume('+'))node = new_node('+',node,mul());
-        else if(consume('-'))node = new_node('-',node,mul());
-        else return node;
+        if(consume('+')){
+            node = new_node('+',node,mul());
+        }
+        else if(consume('-')){
+            node = new_node('-',node,mul());
+        }
+        else{
+            return node;
+        }
     }
 }
 void program(Map *map,int *cnt,Vector *code){
@@ -223,7 +236,7 @@ Node *expr() {
 }
 
 Node *assign(){
-    Node* node = add();
+    Node* node = relational();
 
     for(;;){
         if(consume('!')){
@@ -242,34 +255,28 @@ Node *assign(){
             checkval(node);
             node = new_node('=',node,assign());
         }
-
-    else return node;
+        else { return node; }
     }
 }
 
 Node *relational(){
 	Node* node = add();
     for(;;){
-		if(consume('(')){
-        if(consume('!')){
-            if(consume('='))
-                return new_node(ND_NEQ,node,assign());//!=
-            else{
-                fprintf(stderr,"式が不正です\n");
-                exit(1);
-            }
-        }
-		}
-
-        if(consume('=')){
+        if(consume('<')){
             if(consume('=')){
-				return new_node(ND_EQ,node,assign());//==
+				return new_node(ND_LE,node,assign());//==
 			}
-            checkval(node);
-            node = new_node('=',node,assign());
+            node = new_node('<',node,assign());
         }
 
-    else return node;
+        if(consume('>')){
+             /*評価順を逆にする*/
+            if(consume('=')){
+				return new_node(ND_LE,assign(),node);// >=
+			}
+            node = new_node('<',assign(),node);// >
+        }
+        else { return node; }
     }
 }
 

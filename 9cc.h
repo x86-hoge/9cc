@@ -28,6 +28,7 @@ enum{
 	ND_EQ,
 	ND_NEQ,
 	ND_FUNC,
+	ND_CALL,
 	ND_ARG,
 	ND_RETURN,
 	ND_IF,
@@ -35,6 +36,8 @@ enum{
 	ND_BLOCK,
 	ND_WHILE,
 	ND_FOR,
+	ND_LE,
+	ND_INC,
 };
 
 extern int pos;
