@@ -31,122 +31,118 @@ void gen_cmp(char *op){
 
 /* コード発行 */
 void gen(Node *node){
-
-    if (node->ty == ND_RETURN) {
-        gen(node->lhs);
-        printf("    pop rax\n");
-        printf("    mov rsp, rbp\n");
-        printf("    pop rbp\n");
-        printf("    ret\n");
-        return;
-      }
-
-    if(node->ty == ND_NUM){
-        printf("    push %d\n",node->val);
-        return;
-    }
-    if(node->ty == ND_WHILE){
-        int label = branch_label_no;
-        branch_label_no++;
-        printf(".Lbegin%d:\n",label);
-        gen(node->cond);
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je .Lend%d\n",label);
-        gen(node->body);
-        printf("    push rax\n");
-        printf("    jmp .Lbegin%d\n",label);
-        printf(".Lend%d:\n",label);
-        return;
-    }
-    if(node->ty == ND_ADDR){
-         gen_lval(node->lhs);
-        return;
-    }
-    if(node->ty == ND_DEREF){
-        gen(node->lhs);
-        printf("    pop rax\n");
-        printf("    mov rax, [rax]\n");
-        printf("    push rax\n");
-        return;
-    }
-    if(node->ty == ND_FOR){
-        int label = branch_label_no;
-        branch_label_no++;
-        gen(node->init);
-        printf(".Lbegin%d:\n",label);
-        gen(node->cond);
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-        printf("    je .Lend%d\n",label);
-        gen(node->body);
-        gen(node->inc);
-        printf("    push rax\n");
-        printf("    jmp .Lbegin%d\n",label);
-        printf(".Lend%d:\n",label);
-        return;
-    }
-    if(node->ty == ND_IF){
-        int label = branch_label_no;
-        branch_label_no++;
-        gen(node->cond);
-        printf("    pop rax\n");
-        printf("    cmp rax, 0\n");
-
-        if(node->els){
-            printf("    je .Lelse%d\n",label);
-            gen(node->then);
-            printf("    jmp .Lend%d\n",label);
-            printf(".Lelse%d:\n",label);
-            gen(node->els);
-        }
-        else{
-            printf("    je .Lend%d\n",label);
-            gen(node->then);
-        }
-        printf("    push rax\n");
-        printf(".Lend%d:\n",label);
-        return;
-    }
-
-    if(node->ty == ND_BLOCK){
-        for(int i=0;(Node *)node->stmts->data[i];i++){
-            gen((Node *)node->stmts->data[i]);
+    int label;
+    switch(node->ty){
+        case ND_RETURN:
+            gen(node->lhs);
             printf("    pop rax\n");
-        }
-        return;
-    }
+            printf("    mov rsp, rbp\n");
+            printf("    pop rbp\n");
+            printf("    ret\n");
+            return;
 
-    if(node->ty == ND_IDENT){
-        gen_lval(node);
-        printf("    pop rax\n");
-        printf("    mov rax, [rax]\n");
-        printf("    push rax\n");
-        return;
-    }
+        case ND_NUM:
+            printf("    push %d\n",node->val);
+            return;
 
-    if(node->ty == ND_CALL){
-        if(node->args != NULL){
-            char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
-            for(int i=0;i<6 && node->args->data[i];i++){
-                gen((Node *)node->args->data[i]);
-                printf("    pop rax\n");
-                printf("    mov %s, rax\n",rgsr[i]);
+        case ND_WHILE:
+            label = branch_label_no;
+            branch_label_no++;
+            printf(".Lbegin%d:\n",label);
+            gen(node->cond);
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+            printf("    je .Lend%d\n",label);
+            gen(node->body);
+            printf("    push rax\n");
+            printf("    jmp .Lbegin%d\n",label);
+            printf(".Lend%d:\n",label);
+            return;
+            
+        case ND_ADDR:
+            gen_lval(node->lhs);
+            return;
+
+        case ND_DEREF:
+            gen(node->lhs);
+            printf("    pop rax\n");
+            printf("    mov rax, [rax]\n");
+            printf("    push rax\n");
+            return;
+
+        case ND_FOR:
+            label = branch_label_no;
+            branch_label_no++;
+            gen(node->init);
+            printf(".Lbegin%d:\n",label);
+            gen(node->cond);
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+            printf("    je .Lend%d\n",label);
+            gen(node->body);
+            gen(node->inc);
+            printf("    push rax\n");
+            printf("    jmp .Lbegin%d\n",label);
+            printf(".Lend%d:\n",label);
+            return;
+
+        case ND_IF:
+            label = branch_label_no;
+            branch_label_no++;
+            gen(node->cond);
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+
+            if(node->els){
+                printf("    je .Lelse%d\n",label);
+                gen(node->then);
+                printf("    jmp .Lend%d\n",label);
+                printf(".Lelse%d:\n",label);
+                gen(node->els);
             }
-        }
-        printf("    call %s\n",node->name);
-        return;
-    }
+            else{
+                printf("    je .Lend%d\n",label);
+                gen(node->then);
+            }
+            printf("    push rax\n");
+            printf(".Lend%d:\n",label);
+            return;
 
-    if(node->ty == '='){
-        gen_lval(node->lhs);
-        gen(node->rhs);
+        case ND_BLOCK:
+            for(int i=0;(Node *)node->stmts->data[i];i++){
+                gen((Node *)node->stmts->data[i]);
+                printf("    pop rax\n");
+            }
+            return;
+            
+        case ND_IDENT:
+            gen_lval(node);
+            printf("    pop rax\n");
+            printf("    mov rax, [rax]\n");
+            printf("    push rax\n");
+            return;
 
-        printf("    pop rdi\n");
-        printf("    pop rax\n");
-        printf("    mov [rax], rdi\n");
-        printf("    push rdi\n");
-        return;
+        case ND_CALL:
+            if(node->args != NULL){
+                char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
+                for(int i=0;i<6 && node->args->data[i];i++){
+                    gen((Node *)node->args->data[i]);
+                    printf("    pop rax\n");
+                    printf("    mov %s, rax\n",rgsr[i]);
+                }
+            }
+            printf("    call %s\n",node->name);
+            return;
+
+        case '=':
+            gen_lval(node->lhs);
+            gen(node->rhs);
+
+            printf("    pop rdi\n");
+            printf("    pop rax\n");
+            printf("    mov [rax], rdi\n");
+            printf("    push rdi\n");
+            return;
     }
     if(node->ty != ND_FUNC){
         gen(node->lhs);
