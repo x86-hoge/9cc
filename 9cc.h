@@ -110,7 +110,7 @@ void vec_push(Vector *vec, void *elem);
 
 extern Vector *vec_token;//トークンを格納する
 
-extern Vector *vec_func;//関数を格納する
+extern Vector *vec_func;//関数単位を格納する
 
 Map *new_map();
 
@@ -136,6 +136,6 @@ Func *con();//関数
 
 void set_valmap(Map *map);//マップを関数に渡す
 
-void built(Func *func);
+void func_gen(Func *func);
 
 void funcsp();

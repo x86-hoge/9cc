@@ -14,6 +14,6 @@ int main(int argc,char **argv){
 	funcsp();//関数の分割と解析
 	printf(".intel_syntax noprefix\n");
 	printf(".global main\n");
-	for(int i=0;vec_func->data[i];i++)built((Func *)vec_func->data[i]);
+	for(int i=0;vec_func->data[i];i++)func_gen((Func *)vec_func->data[i]);
 	return 0;
 }

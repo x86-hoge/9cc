@@ -23,6 +23,12 @@ void gen_lval(Node *node){
     printf("    push rax\n");
 }
 
+void gen_cmp(char *op){
+    printf("    cmp rax, rdi\n");
+    printf("    %s al\n",op);
+    printf("    movzb rax, al\n");
+}
+
 /* コード発行 */
 void gen(Node *node){
 
@@ -139,26 +145,18 @@ void gen(Node *node){
     printf("    pop rdi\n");
     printf("    pop rax\n");
 
-    if(node->ty == ND_EQ){
-        printf("    cmp rax, rdi\n");
-        printf("    sete al\n");
-        printf("    movzb rax, al\n");
-    }
-    else if(node->ty == ND_NEQ){
-        printf("    cmp rax, rdi\n");
-        printf("    setne al\n");
-        printf("    movzb rax, al\n");//56 bit clear
-    }
-    else if(node->ty == ND_LE){
-        printf("    cmp rax, rdi\n");
-        printf("    setle al\n");
-        printf("    movzb rax, al\n");//56 bit clear
-    }
     switch(node->ty){
+        case ND_EQ:
+            gen_cmp("sete");
+            break;
+        case ND_NEQ:
+            gen_cmp("setne");
+            break;
+        case ND_LE:
+            gen_cmp("setle");
+            break;
         case '<':
-            printf("    cmp rax, rdi\n");
-            printf("    setl al\n");
-            printf("    movzb rax, al\n");//56 bit clear
+            gen_cmp("setl");
             break;
         case '+':
             printf("    add rax, rdi\n");
@@ -174,4 +172,33 @@ void gen(Node *node){
             printf("    div rdi\n");
     }
     printf("    push rax\n");
+}
+
+void func_gen(Func *func){
+    printf("%s:\n",func->name->lhs->name);//変数名
+    printf("    push rbp\n");
+    printf("    mov rbp, rsp\n");
+    printf("    sub rsp, %d\n",func->cnt*8);
+    
+    set_valmap(func->map);//gen関数に必要な変数データを渡す
+
+    if(func->name->rhs != NULL){
+        int offset;
+        char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
+        printf("    mov rax, rbp\n");
+        for(int i=0;i<6&&func->name->rhs->args->data[i];i++){
+            offset =(int)map_get(func->map,(char *)func->name->rhs->args->data[i]);
+            printf("    sub rax, %d\n",offset);
+            printf("    mov rax, %s\n",rgsr[i]);
+        }
+    }
+
+    for(int i=0;(Node *)func->code->data[i];i++){
+        gen((Node *)func->code->data[i]);
+        printf("    pop rax\n");
+    }
+    
+    printf("    mov rsp, rbp\n");
+    printf("    pop rbp\n");
+    printf("    ret\n");
 }

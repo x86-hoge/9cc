@@ -23,12 +23,12 @@ Token *new_token_ident(int ty,char* input,char* name){
 }
 
 int is_alnum(char c) {
-  return ('a' <= c && c <= 'z') ||
-         ('A' <= c && c <= 'Z') ||
-         ('0' <= c && c <= '9') ||
-         (c == '_');
+//   return ('a' <= c && c <= 'z') ||
+//          ('A' <= c && c <= 'Z') ||
+//          ('0' <= c && c <= '9') ||
+//          (c == '_');
 
-	//return isalpha(c) || isdigit(c) || c == '_'
+	return isalpha(c) || isdigit(c) || c == '_';
 }
 
 Vector *vec_token;
@@ -89,7 +89,7 @@ void tokenize(char *p){
 
 		if(isalpha(*p)){ //文字探し
 			int strcnt=1;
-			while(isalpha(p[strcnt]))strcnt++;
+			while(is_alnum(p[strcnt]))strcnt++;
 			char *val=malloc(sizeof(char) * strcnt+1);
 			strncpy(val,p,strcnt);//変数名部分をトークン化
 			val[strcnt]='\0';//終端
