@@ -1,24 +1,21 @@
 #include "9cc.h"
-
+static char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
 Map *gen_map;
 int branch_label_no = 0;
-
+void gen(Node *node);
+void ptr_gen(Node *node,Type *t);
 void set_valmap(Map *map){
     gen_map = map;
 }
-int new_branch_label_no(){
-    return branch_label_no++;
+
+int roundup(int x, int align) {
+  return (x + align - 1) & ~(align - 1);
 }
 
-Type get_ident_type(Node *node){
+Type *get_ident_type(Node *node){
     Variable *v = map_get(gen_map,node->name);
     Type *t     = v->type;
-    return *t;
-}
-int isptr_ident(Node *node){
-    Variable *v = map_get(gen_map,node->name);
-    Type *t     = v->type;
-    return (t->ty==PTR);
+    return t;
 }
 int get_ident_offset(Node *node){
     Variable *v = map_get(gen_map,node->name);
@@ -47,6 +44,84 @@ void gen_cmp(char *op){
     printf("    movzb rax, al\n");
 }
 
+void ptr_gen(Node *node,Type *t){
+    switch(node->ty){
+        case ND_NUM:
+            printf("    push %d\n",(node->val));
+            if(t->ptr_to->ty == INT){
+                printf("    pop rax\n");
+                printf("    push 4\n");
+                printf("    pop rdi\n");
+                printf("    mul rdi\n");
+                printf("    push rax\n");
+            }
+            else{
+                printf("    pop rax\n");
+                printf("    push 8\n");
+                printf("    pop rdi\n");
+                printf("    push rax\n");
+            }
+            return;
+            
+        case ND_IDENT:
+            gen_lval(node);
+            printf("    pop rax\n");
+            printf("    mov rax, [rax]\n");
+            printf("    push rax\n");
+            return;
+
+        case ND_ADDR:
+            gen_lval(node->lhs);
+            return;
+
+        case ND_DEREF:
+            gen(node->lhs);
+            printf("    pop rax\n");
+            printf("    mov rax, [rax]\n");
+            printf("    push rax\n");
+            return;
+    }
+    if(node->ty != ND_FUNC){
+        if(node->lhs->ty == ND_NUM)
+            { ptr_gen(node->lhs,t); }
+        else
+            { gen(node->lhs); }
+        if(node->rhs->ty == ND_NUM)
+            { ptr_gen(node->rhs,t); }
+        else
+            { gen(node->rhs); }
+    }
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+
+    switch(node->ty){
+        case ND_EQ:
+            gen_cmp("sete");
+            break;
+        case ND_NEQ:
+            gen_cmp("setne");
+            break;
+        case ND_LE:
+            gen_cmp("setle");
+            break;
+        case '<':
+            gen_cmp("setl");
+            break;
+        case '+':
+            printf("    add rax, rdi\n");
+            break;
+        case '-':
+            printf("    sub rax, rdi\n");
+            break;
+        case '*':
+            printf("    mul rdi\n");
+            break;
+        case '/':
+            printf("    mov rdx, 0\n");
+            printf("    div rdi\n");
+    }
+    printf("    push rax\n");
+}
 /* コード発行 */
 void gen(Node *node){
     int label;
@@ -64,8 +139,7 @@ void gen(Node *node){
             return;
 
         case ND_WHILE:
-            label = branch_label_no;
-            branch_label_no++;
+            label = branch_label_no++;
             printf(".Lbegin%d:\n",label);
             gen(node->cond);
             printf("    pop rax\n");
@@ -89,8 +163,7 @@ void gen(Node *node){
             return;
 
         case ND_FOR:
-            label = branch_label_no;
-            branch_label_no++;
+            label = branch_label_no++;
             gen(node->init);
             printf(".Lbegin%d:\n",label);
             gen(node->cond);
@@ -105,8 +178,7 @@ void gen(Node *node){
             return;
 
         case ND_IF:
-            label = branch_label_no;
-            branch_label_no++;
+            label = branch_label_no++;
             gen(node->cond);
             printf("    pop rax\n");
             printf("    cmp rax, 0\n");
@@ -142,24 +214,34 @@ void gen(Node *node){
 
         case ND_CALL:
             if(node->args != NULL){
-                char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
                 for(int i=0;i<6 && node->args->data[i];i++){
                     gen((Node *)node->args->data[i]);
                     printf("    pop rax\n");
                     printf("    mov %s, rax\n",rgsr[i]);
                 }
             }
+            
             printf("    call %s\n",node->name);
+            printf("    push rax\n");
             return;
 
         case '=':
             if(node->lhs->ty == ND_DEREF){
                 gen(node->lhs->lhs);
+                gen(node->rhs);
+            }
+            else if(node->lhs->ty == ND_IDENT){
+                gen_lval(node->lhs);
+                if(get_ident_type(node->lhs)->ty == PTR){
+                    ptr_gen(node->rhs,get_ident_type(node->lhs));
+                }else{
+                    gen(node->rhs);
+                }
             }
             else{
                 gen_lval(node->lhs);
+                gen(node->rhs);
             }
-            gen(node->rhs);
             
 
             printf("    pop rdi\n");
@@ -206,24 +288,23 @@ void gen(Node *node){
 }
 
 void func_gen(Func *func){
-    printf("%s:\n",func->name->lhs->name);//変数名
+    printf("%s:\n",func->name);//変数名
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n",func->cnt*8);
-    
+    printf("    sub rsp, %d\n",roundup(func->valcnt*8,16));
+    printf("    push 1\n");
+    printf("    push 1\n");
+    printf("    push 1\n");
+    printf("    push 1\n");
     set_valmap(func->map);//gen関数に必要な変数データを渡す
-
-    if(func->name->rhs != NULL){
-        int offset;
-        char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
-        printf("    mov rax, rbp\n");
-        for(int i=0;i<6&&func->name->rhs->args->data[i];i++){
-            offset =(int)map_get(func->map,(char *)func->name->rhs->args->data[i]);
-            printf("    sub rax, %d\n",offset);
-            printf("    mov rax, %s\n",rgsr[i]);
+    if(func->argcnt >0){
+        
+        for(int i=0; i<6 && i<func->argcnt ;i++){
+            printf("    mov rax, rbp\n");
+            printf("    sub rax, %d\n",get_ident_offset((Node *)func->args->data[i]));
+            printf("    mov [rax],%s\n",rgsr[i]);
         }
     }
-
     for(int i=0;(Node *)func->code->data[i];i++){
         gen((Node *)func->code->data[i]);
         printf("    pop rax\n");

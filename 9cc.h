@@ -77,7 +77,7 @@ typedef struct Node {
 	int val;
 	char *name;
 	Vector *stmts;//複数式　
-	Vector *args;
+	Vector *args;//関数コール時の引数
 
 
 	/* 実装済 */
@@ -107,9 +107,11 @@ typedef struct{
 }Map;
 
 typedef struct{
-	Node *name;//関数名
-	Map *map;//変数保存
-	int cnt;//変数カウント
+	char *name;//関数名
+	Map *map;//関数全体の変数マップ
+	int valcnt;//変数カウント
+	Vector *args;//引数格納
+	int argcnt;//引数カウント
 	Vector *code;//コード格納
 }Func;
 
@@ -139,7 +141,7 @@ void expect(int line, int expected, int actual);
 
 void runtest();
 
-void program(Map *map,int *cnt,Vector *code);
+void program();
 
 void gen_lval(Node *node);
 

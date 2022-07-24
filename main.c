@@ -12,8 +12,16 @@ int main(int argc,char **argv){
 
 	tokenize(argv[1]);//トークンに分割
 	funcsp();//関数の分割と解析
+
 	printf(".intel_syntax noprefix\n");
-	printf(".global main\n");
-	for(int i=0;vec_func->data[i];i++)func_gen((Func *)vec_func->data[i]);
+	printf(".global ");
+	for(int i=0;vec_func->data[i];i++){
+		printf("%s,",((Func *)vec_func->data[i])->name);
+	}
+	printf("\n");
+
+	for(int i=0;vec_func->data[i];i++){
+		func_gen((Func *)vec_func->data[i]);
+	}
 	return 0;
 }

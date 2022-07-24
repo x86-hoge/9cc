@@ -11,18 +11,22 @@ void checkval(Node *node);
 Vector *vec_code;
 Map *val_map;
 int *val_cnt;
-void arg_parse(Func *func);
-void arg_parse(Func *func);
-
+char *val_func;
+int acnt=0;
 int pos=0;
 Vector *vec_func;
 
 Func *new_func(char *name){
-
-    Func *func=malloc(sizeof(Func));
-    func->name = new_node_ident(name);
+    val_func = name;
+    Func *func = malloc(sizeof(Func));
+    func->name = name;
+    
     func->map=new_map();
-    func->cnt=0;
+    func->valcnt = 0;
+
+    func->args=new_vector();
+    func->argcnt = 0;
+
     func->code=new_vector();
     return func;
 }
@@ -37,6 +41,17 @@ Node *new_node(int ty, Node *lhs, Node *rhs){
 Type *new_type(){
     Type *type = malloc(sizeof(Type));
     return type;
+}
+Type *new_type_ptr(){
+    Type *t1 = new_type();
+    if(consume('*')){
+        t1->ty = PTR;
+        t1->ptr_to = new_type_ptr(); 
+    }
+    else{
+        t1->ty = INT;
+        }
+    return t1;
 }
 
 Node *new_node_num(int val){
@@ -122,8 +137,12 @@ Node *term(){
     if(consume(TK_INT)){
         Node *node = calloc(1, sizeof(Node));
         Type *type  = new_type();
-        if(consume('*')){ type->ty = PTR; }
-        else{ type->ty = INT; }
+        if(consume('*')){ 
+            type->ty = PTR; 
+            type->ptr_to = new_type_ptr();
+        }
+        else
+            { type->ty = INT; }
         
         if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
             node->ty   = ND_IDENT;
@@ -189,10 +208,7 @@ Node *add(){
         }
     }
 }
-void program(Map *map,int *cnt,Vector *code){
-    val_map = map;//変数マップ
-    val_cnt=cnt;//変数カウント
-    vec_code = code;//コード格納
+void program(){
     while(((Token *)vec_token->data[pos])->ty != '}')vec_push(vec_code,(void *)stmt());
     vec_push(vec_code,(void *)NULL);
 }
@@ -334,77 +350,88 @@ Node *relational(){
 
 void checkval(Node *node){
     if(!map_get(val_map,node->name)){
+        //printf(";function_name：%s variable regist%d %s %d %d\n",val_func,*val_cnt,node->name,val_cnt,acnt);
         *val_cnt+=1;
+        acnt++;
         Variable *t = calloc(1, sizeof(Variable));
         t->type   = node->t;
-        t->offset = (void*)(intptr_t)(*val_cnt*8);
+        t->offset = (void*)(intptr_t)(*val_cnt * 8);
         map_put(val_map, node->name, (void*)t);
-    }
-}
-
-Node *func_parse(Node *node){
-
-    if(node->ty == ND_IDENT && consume('(')){
-		
-        if(!consume(')')){
-            node = new_node(ND_FUNC,node,new_node_arg());//関数
-            while(!consume(')')){
-                vec_push(node->rhs->args,((Token *)vec_token->data[pos++])->name);
-            }
-            return node;
-        }else
-            return new_node(ND_FUNC,node,NULL);
-    }
-    else{
-    fprintf(stderr,"関数構文エラー:カッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
-    exit(1);
     }
 }
 
 
 Func *con(){//パース
-    if(((Token *)vec_token->data[pos])->ty != TK_INT){
-        fprintf(stderr,"型がありません:%s\n",((Token *)vec_token->data[pos])->input);
+
+    /* 関数型を確認 */
+    if(((Token *)vec_token->data[pos++])->ty != TK_INT){
+        fprintf(stderr,"関数の型がありません:%s\n",((Token *)vec_token->data[pos])->input);
         exit(1);
     }
-    Token * tkn = vec_token->data[++pos];
-    char *func_name=tkn->name;pos++;
-
-    if(!func_name){
-        fprintf(stderr,"構文エラー:関数名がありません:%c\n",tkn->ty);
+    /*関数名チェック*/
+    if(((Token *)vec_token->data[pos])->ty != TK_IDENT){
+        fprintf(stderr,"構文エラー:関数名がありません:%c\n",((Token *)vec_token->data[pos])->ty);
         exit(1);
     }
-
-    Func *func=new_func(func_name);
-    func->name = func_parse(func->name);
-    arg_parse(func);
-
+    
+    Func *func = new_func(((Token *)vec_token->data[pos++])->name);
+    val_map  = func->map;       //変数マップ
+    val_cnt  = &(func->valcnt); //変数カウント
+    vec_code = func->code;     //コード格納
+    
+    /*引数チェック*/
+    if(consume('(')){
+        if(!consume(')')){
+            while(!consume(')')){
+                if(consume(TK_INT)){
+                    Node *node = calloc(1, sizeof(Node));
+                    Type *type  = new_type();
+                    if(consume('*')){ 
+                        type->ty = PTR; 
+                        type->ptr_to = new_type_ptr();
+                    }
+                    else
+                        { type->ty = INT; }
+                    
+                    if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
+                        node->ty   = ND_IDENT;
+                        node->name = ((Token *)vec_token->data[pos])->name;//変数名 
+                        node->t = type;
+                        pos++;
+	            	    func->valcnt += 1;
+                        func->argcnt += 1;
+                        vec_push(func->args,(void *)node);
+                        if(!map_get(func->map, node->name)){
+                            Variable *t = calloc(1, sizeof(Variable));
+                            t->type   = node->t;
+                            t->offset = (void*)(intptr_t)(func->argcnt*8);
+                            map_put(func->map, node->name, (void*)t);
+                        }
+                    }else{
+                        fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
+                        exit(1);
+                    }
+                    
+	            }
+            }
+        }
+    }
+    else{
+        fprintf(stderr,"関数構文エラー:カッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+        exit(1);
+    }
     if(consume('{')){
-        program(func->map,&(func->cnt),func->code);//パース
-        if(consume('}')){
-            //何もしない
-        }else{
+        program();//パース
+        if(!consume('}')){
             fprintf(stderr,"閉じカッコがありません\n");
             exit(1);
         }
-
     }
     else{
         fprintf(stderr,"開きカッコがありません\n");
         exit(1);
     }
     return func;
-}
-void arg_parse(Func *func){
-
-    if(func->name->rhs == NULL){ return; }
-    
-    Vector *arg = func->name->rhs->args;
-
-    for(int i=0; arg->data[i] && i<6; i++){
-        func->cnt++;
-        map_put(func->map,(char *)arg->data[i],(void *)(intptr_t)(func->cnt*8));
-    }
 }
 
 void funcsp(){
