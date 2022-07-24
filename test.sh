@@ -57,5 +57,9 @@ try 12  "int main(){go(40,50,60,70,80,90);12;}int go(int a,int b,int c,int d,int
 try 0   "int main(){int p;p=10;check_addr(&p);0;}"
 try 113 "int main(){int *p;int a;a=10;p=&a;check_ptr(&p);p;}"
 try 241 "int main(){int *p;int a;int b;int c;a=10;b=11;c=241;p=&a;p=p-4;*p;}"
-try 1   "int main(){int *p;int *q;alloc4(&p, 1, 2, 4, 8);1;}"
+try 12  "int main(){int b;b=get_num();b;} int get_num(){return 12;}"
+try 1   "int main(){int *p;p=alloc4(1, 2, 4, 8);*p;}"
+try 2   "int main(){int *p;p=alloc4(1, 2, 4, 8);p=p+1;*p;}"
+try 4   "int main(){int *p;p=alloc4(1, 2, 4, 8);p=p+2;*p;}"
+try 8   "int main(){int *p;p=alloc4(1, 2, 4, 8);p=p+3;*p;}"
 echo OK

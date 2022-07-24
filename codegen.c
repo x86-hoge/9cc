@@ -80,6 +80,18 @@ void ptr_gen(Node *node,Type *t){
             printf("    mov rax, [rax]\n");
             printf("    push rax\n");
             return;
+        case ND_CALL:
+            if(node->args != NULL){
+                for(int i=0;i<6 && node->args->data[i];i++){
+                    gen((Node *)node->args->data[i]);
+                    printf("    pop rax\n");
+                    printf("    mov %s, rax\n",rgsr[i]);
+                }
+            }
+            
+            printf("    call %s\n",node->name);
+            printf("    push rax\n");
+            return;
     }
     if(node->ty != ND_FUNC){
         if(node->lhs->ty == ND_NUM)
