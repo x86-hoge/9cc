@@ -1,4 +1,5 @@
 #include "9cc.h"
+
 Map *gen_map;
 int branch_label_no = 0;
 
@@ -8,19 +9,36 @@ void set_valmap(Map *map){
 int new_branch_label_no(){
     return branch_label_no++;
 }
+
+Type get_ident_type(Node *node){
+    Variable *v = map_get(gen_map,node->name);
+    Type *t     = v->type;
+    return *t;
+}
+int isptr_ident(Node *node){
+    Variable *v = map_get(gen_map,node->name);
+    Type *t     = v->type;
+    return (t->ty==PTR);
+}
+int get_ident_offset(Node *node){
+    Variable *v = map_get(gen_map,node->name);
+    int offset  = (int)(intptr_t)v->offset; 
+    return offset;
+}
 void gen_lval(Node *node){
     if(node->ty != ND_IDENT){
-        fprintf(stderr,"代入の左辺値が変数ではありません");
+        fprintf(stderr,"代入の左辺値が変数ではありません:%d\n",node->ty);
         exit(1);
     }
     if(!map_get(gen_map,node->name)){
         fprintf(stderr,"未定義の変数です:%s\n",node->name);
         exit(1);
     }
-    int offset = (int)(intptr_t)map_get(gen_map,node->name); 
+    
     printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n",offset);
+    printf("    sub rax, %d\n",get_ident_offset(node));
     printf("    push rax\n");
+        
 }
 
 void gen_cmp(char *op){
@@ -135,8 +153,14 @@ void gen(Node *node){
             return;
 
         case '=':
-            gen_lval(node->lhs);
+            if(node->lhs->ty == ND_DEREF){
+                gen(node->lhs->lhs);
+            }
+            else{
+                gen_lval(node->lhs);
+            }
             gen(node->rhs);
+            
 
             printf("    pop rdi\n");
             printf("    pop rax\n");

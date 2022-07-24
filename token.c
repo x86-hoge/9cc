@@ -31,6 +31,16 @@ int is_alnum(char c) {
 	return isalpha(c) || isdigit(c) || c == '_';
 }
 
+
+char *get_str(char *p){
+	int strcnt=1;
+	while(is_alnum(p[strcnt]))strcnt++;
+	char *val=malloc(sizeof(char) * strcnt+1);
+	strncpy(val,p,strcnt);//変数名部分をトークン化
+	val[strcnt]='\0';//終端
+	return val;
+}
+
 Vector *vec_token;
 
 void tokenize(char *p){
@@ -82,6 +92,12 @@ void tokenize(char *p){
 		}
 		if (strncmp(p, "for", 3) == 0 && !is_alnum(p[3])) {
 			vec_push(vec_token,(void *)new_token(TK_FOR,p));
+ 			i++;
+  			p += 3;
+  			continue;
+		}
+		if (strncmp(p, "int", 3) == 0 && !is_alnum(p[3])) {
+			vec_push(vec_token,(void *)new_token(TK_INT,p));
  			i++;
   			p += 3;
   			continue;

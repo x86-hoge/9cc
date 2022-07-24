@@ -13,7 +13,10 @@ enum{
 	TK_ELSE,
 	TK_WHILE,
 	TK_FOR,
+	TK_INT,
 };
+
+
 
 typedef struct {
 	int ty;
@@ -27,7 +30,7 @@ enum{
 	ND_IDENT,
 	ND_EQ,
 	ND_NEQ,
-	ND_FUNC,
+	ND_FUNC,//260
 	ND_CALL,
 	ND_ARG,
 	ND_RETURN,
@@ -37,10 +40,11 @@ enum{
 	ND_WHILE,
 	ND_FOR,
 	ND_LE,
-	ND_INC,
+	ND_INC,//270
 	ND_SUB,
 	ND_ADDR,
 	ND_DEREF,
+	ND_INT,
 };
 
 extern int pos;
@@ -53,6 +57,15 @@ typedef struct{
 
 typedef struct Node Node;
 
+typedef struct Type{
+	enum { INT, PTR } ty;
+  	struct Type *ptr_to;
+}Type;
+
+typedef struct Variable{
+	Type *type;
+  	void *offset;
+}Variable;
 
 typedef struct Node {
 	int ty;
@@ -83,6 +96,7 @@ typedef struct Node {
   	// "do" body "while" ( cond )
   	// "switch" ( cond ) body
   	// "case" val ":" body
+	Type *t;
 }Node;
 
 extern Node *code[];

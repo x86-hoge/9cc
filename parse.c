@@ -34,6 +34,10 @@ Node *new_node(int ty, Node *lhs, Node *rhs){
     node->rhs = rhs;
     return node;
 }
+Type *new_type(){
+    Type *type = malloc(sizeof(Type));
+    return type;
+}
 
 Node *new_node_num(int val){
     Node *node = malloc(sizeof(Node));
@@ -114,6 +118,23 @@ Node *term(){
 			return node;
 		}
 		return new_node_ident(tkn->name);//変数名
+	}
+    if(consume(TK_INT)){
+        Node *node = calloc(1, sizeof(Node));
+        Type *type  = new_type();
+        if(consume('*')){ type->ty = PTR; }
+        else{ type->ty = INT; }
+        
+        if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
+            node->ty   = ND_IDENT;
+            node->name = ((Token *)vec_token->data[pos])->name;//変数名 
+            node->t = type;
+            checkval(node);
+            pos++;
+		    return node;
+        }
+        fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
+        exit(1);
 	}
 	
     fprintf(stderr,"数値でも開きカッコでもないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
@@ -284,7 +305,6 @@ Node *assign(){
             if(consume('=')){
 				return new_node(ND_EQ,node,assign());//==
 			}
-            checkval(node);
             node = new_node('=',node,assign());
         }
         else { return node; }
@@ -315,7 +335,10 @@ Node *relational(){
 void checkval(Node *node){
     if(!map_get(val_map,node->name)){
         *val_cnt+=1;
-        map_put(val_map, node->name,(void *)(intptr_t)(*val_cnt*8));
+        Variable *t = calloc(1, sizeof(Variable));
+        t->type   = node->t;
+        t->offset = (void*)(intptr_t)(*val_cnt*8);
+        map_put(val_map, node->name, (void*)t);
     }
 }
 
@@ -333,14 +356,18 @@ Node *func_parse(Node *node){
             return new_node(ND_FUNC,node,NULL);
     }
     else{
-    fprintf(stderr,"構文エラー:カッコがありません\n");
+    fprintf(stderr,"関数構文エラー:カッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
     exit(1);
     }
 }
 
 
 Func *con(){//パース
-    Token * tkn = ((Token *)vec_token->data[pos]);
+    if(((Token *)vec_token->data[pos])->ty != TK_INT){
+        fprintf(stderr,"型がありません:%s\n",((Token *)vec_token->data[pos])->input);
+        exit(1);
+    }
+    Token * tkn = vec_token->data[++pos];
     char *func_name=tkn->name;pos++;
 
     if(!func_name){
