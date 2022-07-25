@@ -102,6 +102,12 @@ void tokenize(char *p){
   			p += 3;
   			continue;
 		}
+		if (strncmp(p, "sizeof", 6) == 0 && !is_alnum(p[6])) {
+			vec_push(vec_token,(void *)new_token(TK_SIZEOF,p));
+ 			i++;
+  			p += 6;
+  			continue;
+		}
 
 		if(isalpha(*p)){ //文字探し
 			int strcnt=1;

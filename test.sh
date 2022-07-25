@@ -61,5 +61,10 @@ try 12  "int main(){int b;b=get_num();b;} int get_num(){return 12;}"
 try 1   "int main(){int *p;p=alloc4(1, 2, 4, 8);*p;}"
 try 2   "int main(){int *p;p=alloc4(1, 2, 4, 8);p=p+1;*p;}"
 try 4   "int main(){int *p;p=alloc4(1, 2, 4, 8);p=p+2;*p;}"
-try 8   "int main(){int *p;p=alloc4(1, 2, 4, 8);p=p+3;*p;}"
+try 2   "int main(){int *p;alloc3(&p, 2, 4, 8);*p;}"
+try 4   "int main(){int *p;alloc3(&p, 2, 4, 8);p=p+1;*p;}"
+try 8   "int main(){int *p;alloc3(&p, 2, 4, 8);p=p+2;*p;}"
+try 4   "int main(){sizeof int;sizeof(int);}"
+try 8   "int main(){sizeof int*;sizeof(int*);}"
+
 echo OK

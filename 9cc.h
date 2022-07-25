@@ -14,6 +14,7 @@ enum{
 	TK_WHILE,
 	TK_FOR,
 	TK_INT,
+	TK_SIZEOF,
 };
 
 

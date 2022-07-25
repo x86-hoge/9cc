@@ -141,19 +141,17 @@ Node *term(){
             type->ty = PTR; 
             type->ptr_to = new_type_ptr();
         }
-        else
-            { type->ty = INT; }
+        else{ type->ty = INT; }
+        node->t = type;
         
         if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
             node->ty   = ND_IDENT;
             node->name = ((Token *)vec_token->data[pos])->name;//変数名 
-            node->t = type;
             checkval(node);
             pos++;
 		    return node;
         }
-        fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
-        exit(1);
+        return node;
 	}
 	
     fprintf(stderr,"数値でも開きカッコでもないトークンです:%s\n",((Token *)vec_token->data[pos])->input);
@@ -161,6 +159,13 @@ Node *term(){
 }
 
 Node *unary(){
+    if(consume(TK_SIZEOF)){
+        Node *node =  unary();
+        if(node->t->ty == INT) 
+            { return new_node_num(4); }
+        else
+            { return new_node_num(8); }
+    }
     if(consume('+')){
         return term();
     }

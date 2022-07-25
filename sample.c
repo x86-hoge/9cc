@@ -21,9 +21,18 @@ int* alloc4(int a,int b,int c,int d){
     p[0]=a;p[1]=b;p[2]=c;p[3]=d;
     return p;
 }
+void alloc3(int **p,int a,int b,int c){
+    printf("引数：%d %d %d\n",a,b,c);
+    *p = malloc(sizeof(int)*4);
+    **p=a;
+    *(*p+1)=b;
+    *(*p+2)=c;
+}
+
 void check_addr(int *p){
     printf("%d\n",*p);
 }
+
 void check_ptr(int *p){
     *p = 113;
 }
