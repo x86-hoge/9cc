@@ -12,7 +12,6 @@ Vector *vec_code;
 Map *val_map;
 int *val_cnt;
 char *val_func;
-int acnt=0;
 int pos=0;
 Vector *vec_func;
 
@@ -137,20 +136,32 @@ Node *term(){
     if(consume(TK_INT)){
         Node *node = calloc(1, sizeof(Node));
         Type *type  = new_type();
+
         if(consume('*')){ 
             type->ty = PTR; 
             type->ptr_to = new_type_ptr();
         }
         else{ type->ty = INT; }
-        node->t = type;
+         node->t = type;
         
         if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
             node->ty   = ND_IDENT;
-            node->name = ((Token *)vec_token->data[pos])->name;//変数名 
-            checkval(node);
+            node->name = ((Token *)vec_token->data[pos])->name;//変数名
             pos++;
-		    return node;
+            if(consume('[')){
+                Node *num = term();
+                if(!consume(']')){
+                    fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+                    exit(1);
+                }
+                if(num->ty == TK_NUM){
+                  type->ty = ARRAY;
+                  type->array_size = num->val;   
+                }
+            }
+            checkval(node);
         }
+       
         return node;
 	}
 	
@@ -355,11 +366,14 @@ Node *relational(){
 
 void checkval(Node *node){
     if(!map_get(val_map,node->name)){
-        //printf(";function_name：%s variable regist%d %s %d %d\n",val_func,*val_cnt,node->name,val_cnt,acnt);
-        *val_cnt+=1;
-        acnt++;
+        int allosize = 1;
+        if(node->t->ty == ARRAY){
+           allosize = (node->t->array_size);
+        }
+        *val_cnt+=allosize;
         Variable *t = calloc(1, sizeof(Variable));
         t->type   = node->t;
+        
         t->offset = (void*)(intptr_t)(*val_cnt * 8);
         map_put(val_map, node->name, (void*)t);
     }

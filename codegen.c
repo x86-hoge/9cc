@@ -31,7 +31,6 @@ void gen_lval(Node *node){
         fprintf(stderr,"未定義の変数です:%s\n",node->name);
         exit(1);
     }
-    
     printf("    mov rax, rbp\n");
     printf("    sub rax, %d\n",get_ident_offset(node));
     printf("    push rax\n");
@@ -65,9 +64,11 @@ void ptr_gen(Node *node,Type *t){
             
         case ND_IDENT:
             gen_lval(node);
-            printf("    pop rax\n");
-            printf("    mov rax, [rax]\n");
-            printf("    push rax\n");
+            if(get_ident_type(node)->ty != ARRAY){
+                printf("    pop rax\n");
+                printf("    mov rax, [rax]\n");
+                printf("    push rax\n");
+            }
             return;
 
         case ND_ADDR:
@@ -219,9 +220,11 @@ void gen(Node *node){
             
         case ND_IDENT:
             gen_lval(node);
-            printf("    pop rax\n");
-            printf("    mov rax, [rax]\n");
-            printf("    push rax\n");
+            if(get_ident_type(node)->ty != ARRAY){
+                printf("    pop rax\n");
+                printf("    mov rax, [rax]\n");
+                printf("    push rax\n");
+            }
             return;
 
         case ND_CALL:

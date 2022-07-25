@@ -66,5 +66,6 @@ try 4   "int main(){int *p;alloc3(&p, 2, 4, 8);p=p+1;*p;}"
 try 8   "int main(){int *p;alloc3(&p, 2, 4, 8);p=p+2;*p;}"
 try 4   "int main(){sizeof int;sizeof(int);}"
 try 8   "int main(){sizeof int*;sizeof(int*);}"
-
+try 120 "int main(){int a[2];*a = 120;*(a + 1) = 114;int *p;p = a;return *(p);}"
+try 114 "int main(){int a[2];*a = 120;*(a + 1) = 114;int *p;p = a;return *(p+1);}"
 echo OK
