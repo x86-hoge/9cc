@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 enum{
 	TK_NUM = 256,
@@ -67,6 +68,7 @@ typedef struct Type{
 typedef struct Variable{
 	Type *type;
   	void *offset;
+	enum { LOCAL=1,GLOBAL} scope;
 }Variable;
 
 typedef struct Node {
@@ -110,7 +112,7 @@ typedef struct{
 
 typedef struct{
 	char *name;//関数名
-	Map *map;//関数全体の変数マップ
+	Map *map;//ローカル変数マップ
 	int valcnt;//変数カウント
 	Vector *args;//引数格納
 	int argcnt;//引数カウント
@@ -160,3 +162,7 @@ void set_valmap(Map *map);//マップを関数に渡す
 void func_gen(Func *func);
 
 void funcsp();
+
+extern Map *global_map;//ローカル変数マップ
+
+extern int *gval_cnt;

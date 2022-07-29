@@ -1,46 +1,79 @@
 #include "9cc.h"
 static char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
-Map *gen_map;
+Map *local_map;
+Map *global_map;
 int branch_label_no = 0;
 void gen(Node *node);
 void ptr_gen(Node *node,Type *t);
 void set_valmap(Map *map){
-    gen_map = map;
+    local_map = map;
 }
 
 int roundup(int x, int align) {
   return (x + align - 1) & ~(align - 1);
 }
 
-Type *get_ident_type(Node *node){
-    Variable *v = map_get(gen_map,node->name);
-    Type *t     = v->type;
-    return t;
+
+
+Variable *get_var(Map *map,Node *node){
+    if(map_get(map,node->name)){
+        return (Variable*)map_get(map,node->name);
+    }
+    return NULL;
 }
-int get_ident_offset(Node *node){
-    Variable *v = map_get(gen_map,node->name);
+Variable *get_global_var(Node *node){ return get_var(global_map,node); }
+
+Variable *get_local_var(Node *node) { return get_var(local_map,node);  }
+
+Type *get_local_ident_type(Node *node){ return (Type*)get_local_var(node)->type; }
+
+
+
+int get_local_ident_offset(Node *node){
+    Variable *v = map_get(local_map,node->name);
     int offset  = (int)(intptr_t)v->offset; 
     return offset;
 }
-void gen_lval(Node *node){
+
+int ident_check(Node *node){
     if(node->ty != ND_IDENT){
         fprintf(stderr,"代入の左辺値が変数ではありません:%d\n",node->ty);
         exit(1);
     }
-    if(!map_get(gen_map,node->name)){
-        fprintf(stderr,"未定義の変数です:%s\n",node->name);
-        exit(1);
+    return 1;
+}
+
+void gen_lval(Node *node){
+    ident_check(node);
+    /* ローカル変数 */
+    if(map_get(local_map,node->name)){
+        printf("    mov rax, rbp\n");
+        printf("    sub rax, %d\n",get_local_ident_offset(node));
+        printf("    push rax\n");
     }
-    printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n",get_ident_offset(node));
-    printf("    push rax\n");
-        
+
+    /* グローバル変数 */
+    else{
+         if(!map_get(global_map,node->name)){
+            fprintf(stderr,"未定義の変数です:%s\n",node->name);
+            exit(1);
+        }
+        printf("    mov eax, DWORD PTR %s[rip]\n", node->name);
+        printf("    push rax\n");
+    } 
 }
 
 void gen_cmp(char *op){
     printf("    cmp rax, rdi\n");
     printf("    %s al\n",op);
     printf("    movzb rax, al\n");
+}
+
+int gen_num(Node *node){
+    if(node->ty == ND_NUM){
+        return node->val;
+    }
+    return 0;
 }
 
 void ptr_gen(Node *node,Type *t){
@@ -64,7 +97,7 @@ void ptr_gen(Node *node,Type *t){
             
         case ND_IDENT:
             gen_lval(node);
-            if(get_ident_type(node)->ty != ARRAY){
+            if(get_local_ident_type(node)->ty != ARRAY){
                 printf("    pop rax\n");
                 printf("    mov rax, [rax]\n");
                 printf("    push rax\n");
@@ -148,7 +181,7 @@ void gen(Node *node){
             return;
 
         case ND_NUM:
-            printf("    push %d\n",node->val);
+            printf("    push %d\n",gen_num(node));
             return;
 
         case ND_WHILE:
@@ -220,7 +253,7 @@ void gen(Node *node){
             
         case ND_IDENT:
             gen_lval(node);
-            if(get_ident_type(node)->ty != ARRAY){
+            if(get_local_var(node) && get_local_ident_type(node)->ty != ARRAY){
                 printf("    pop rax\n");
                 printf("    mov rax, [rax]\n");
                 printf("    push rax\n");
@@ -242,27 +275,38 @@ void gen(Node *node){
 
         case '=':
             if(node->lhs->ty == ND_DEREF){
-                gen(node->lhs->lhs);
-                gen(node->rhs);
+                    gen(node->lhs->lhs);
+                    gen(node->rhs);
+                    printf("    pop rdi\n");
+                    printf("    pop rax\n");
+                    printf("    mov [rax], rdi\n");
+                    printf("    push rdi\n");
+                    return;
             }
-            else if(node->lhs->ty == ND_IDENT){
-                gen_lval(node->lhs);
-                if(get_ident_type(node->lhs)->ty == PTR){
-                    ptr_gen(node->rhs,get_ident_type(node->lhs));
-                }else{
+            if( get_global_var(node->lhs) && ident_check(node->lhs) ){
+                
+                printf("    mov DWORD PTR %s[rip], %d\n", node->lhs->name, gen_num(node->rhs));
+                printf("    push rax\n");
+            } 
+            else{
+                
+                if(node->lhs->ty == ND_IDENT){
+                    gen_lval(node->lhs);
+                    if(get_local_ident_type(node->lhs)->ty == PTR){
+                        ptr_gen(node->rhs,get_local_ident_type(node->lhs));
+                    }else{
+                        gen(node->rhs);
+                    }
+                }
+                else{
+                    gen_lval(node->lhs);
                     gen(node->rhs);
                 }
+                printf("    pop rdi\n");
+                printf("    pop rax\n");
+                printf("    mov [rax], rdi\n");
+                printf("    push rdi\n");
             }
-            else{
-                gen_lval(node->lhs);
-                gen(node->rhs);
-            }
-            
-
-            printf("    pop rdi\n");
-            printf("    pop rax\n");
-            printf("    mov [rax], rdi\n");
-            printf("    push rdi\n");
             return;
     }
     if(node->ty != ND_FUNC){
@@ -316,7 +360,7 @@ void func_gen(Func *func){
         
         for(int i=0; i<6 && i<func->argcnt ;i++){
             printf("    mov rax, rbp\n");
-            printf("    sub rax, %d\n",get_ident_offset((Node *)func->args->data[i]));
+            printf("    sub rax, %d\n",get_local_ident_offset((Node *)func->args->data[i]));
             printf("    mov [rax],%s\n",rgsr[i]);
         }
     }

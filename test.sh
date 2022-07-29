@@ -68,4 +68,8 @@ try 4   "int main(){sizeof int;sizeof(int);}"
 try 8   "int main(){sizeof int*;sizeof(int*);}"
 try 120 "int main(){int a[2];*a = 120;*(a + 1) = 114;int *p;p = a;return *(p);}"
 try 114 "int main(){int a[2];*a = 120;*(a + 1) = 114;int *p;p = a;return *(p+1);}"
+try 8   "int main(){int a[10];a[0]=8;a[1]=2;a[2]=3;a[0];}"
+try 8   "int main(){int a[10];a[0]=8;a[1]=2;a[2]=3;0[a];}"
+try 8   "int gla; int glb;int main(){int a[10];a[0]=8;a[1]=2;a[2]=3;0[a];}"
+try 12  "int asdf;int main(){asdf=12;asdf;}"
 echo OK

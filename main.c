@@ -11,14 +11,29 @@ int main(int argc,char **argv){
 	}
 
 	tokenize(argv[1]);//トークンに分割
+	
 	funcsp();//関数の分割と解析
 
 	printf(".intel_syntax noprefix\n");
-	printf(".global ");
-	for(int i=0;vec_func->data[i];i++){
-		printf("%s,",((Func *)vec_func->data[i])->name);
-	}
+	printf(".global main");
 	printf("\n");
+	for(int i=global_map->keys->len - 1;i>=0;i--){
+		Type *type= (Type*)((Variable *)global_map->vals->data[i])->type;
+		switch(type->ty){
+			case INT:
+				printf(".comm   %s,%d,%d\n",(char*)global_map->keys->data[i],4,4); 
+				break;
+			case PTR:
+				printf(".comm   %s,%d,%d\n",(char*)global_map->keys->data[i],8,8); 
+				break;
+			case ARRAY: 
+				printf(".comm   %s,%d,%d\n",(char*)global_map->keys->data[i],4,8); 
+				break;
+			default: 
+				printf("ERROR\n");
+				exit(1);
+		}
+	}
 
 	for(int i=0;vec_func->data[i];i++){
 		func_gen((Func *)vec_func->data[i]);

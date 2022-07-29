@@ -1,4 +1,5 @@
 #include "9cc.h"
+
 Node *term();
 Node *mul();
 Node *add();
@@ -8,12 +9,16 @@ Node *assign();
 Node *func(Node *node);
 Node *relational();
 void checkval(Node *node);
+
 Vector *vec_code;
 Map *val_map;
 int *val_cnt;
 char *val_func;
 int pos=0;
 Vector *vec_func;
+
+Map *global_map;
+int *gval_cnt;
 
 Func *new_func(char *name){
     val_func = name;
@@ -114,24 +119,43 @@ Node *term(){
         }
         return node;
     }
+    if(consume('[')){
+        Node *index_node = term();
+        if(!consume(']')){
+            fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+            exit(1);
+        }
+        return index_node;
+    }
 
     if(((Token *)vec_token->data[pos])->ty == TK_NUM){
-		return new_node_num(((Token *)vec_token->data[pos++])->val);//数値
+		 Node *node = new_node_num(((Token *)vec_token->data[pos++])->val);//数値
+        if(((Token *)vec_token->data[pos])->ty == '['){
+            Node *index_node = term();
+            Node *add_node = new_node('+',node,index_node);
+            return new_node(ND_DEREF,add_node,NULL);
+        }
+        return node;
 	}
+
     if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
-		Token *tkn = vec_token->data[pos++];
+        Node *node = new_node_ident(((Token *)vec_token->data[pos++])->name);
 		Vector *vec = new_vector();
+
+        /*関数コールとして処理*/
 		if(consume('(')){
-			Node *node = calloc(1, sizeof(Node));
 			node->ty   = ND_CALL;
-			node->name =tkn->name;
-			
 			while(!consume(')')){ vec_push(vec,(void *)expr()); }
 			vec_push(vec,(void *)NULL);
 			node->args = vec;
-			return node;
 		}
-		return new_node_ident(tkn->name);//変数名
+        /*添え字として処理*/
+        else if(((Token *)vec_token->data[pos])->ty == '['){
+            Node *index_node = term();
+            Node *add_node = new_node('+',node,index_node);
+            return new_node(ND_DEREF,add_node,NULL);
+        }
+		return node;
 	}
     if(consume(TK_INT)){
         Node *node = calloc(1, sizeof(Node));
@@ -142,26 +166,21 @@ Node *term(){
             type->ptr_to = new_type_ptr();
         }
         else{ type->ty = INT; }
-         node->t = type;
+        node->t = type;
         
         if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
             node->ty   = ND_IDENT;
             node->name = ((Token *)vec_token->data[pos])->name;//変数名
             pos++;
-            if(consume('[')){
-                Node *num = term();
-                if(!consume(']')){
-                    fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
-                    exit(1);
-                }
-                if(num->ty == TK_NUM){
+           if(((Token *)vec_token->data[pos])->ty == '['){
+            Node *index_node = term();
+                if(index_node->ty == TK_NUM){
                   type->ty = ARRAY;
-                  type->array_size = num->val;   
+                  type->array_size = index_node->val;   
                 }
             }
             checkval(node);
         }
-       
         return node;
 	}
 	
@@ -301,9 +320,9 @@ Node *stmt(){
     }
     else{
         if (consume(TK_RETURN)) {
-        node = calloc(1, sizeof(Node));
-        node->ty = ND_RETURN;
-        node->lhs = expr();
+            node = calloc(1, sizeof(Node));
+            node->ty = ND_RETURN;
+            node->lhs = expr();
           }
         else{
             node = expr();
@@ -373,24 +392,87 @@ void checkval(Node *node){
         *val_cnt+=allosize;
         Variable *t = calloc(1, sizeof(Variable));
         t->type   = node->t;
+        t->scope = LOCAL;
         
         t->offset = (void*)(intptr_t)(*val_cnt * 8);
         map_put(val_map, node->name, (void*)t);
     }
 }
+void global_checkval(Node *node){
+    if(!map_get(global_map,node->name)){
+        int allosize = 1;
+        if(node->t->ty == ARRAY){
+           allosize = (node->t->array_size);
+        }
+        *gval_cnt += allosize;
+        Variable *t = calloc(1, sizeof(Variable));
+        t->type   = node->t;
+        t->scope = GLOBAL;
+        
+        t->offset = (void*)(intptr_t)(*gval_cnt * 8);
+        map_put(global_map, node->name, (void*)t);
+    }
+}
 
 
-Func *con(){//パース
+Node *global_parse(){
+    Node *n = calloc(1, sizeof(Node));
+    Type *t = new_type();
 
-    /* 関数型を確認 */
-    if(((Token *)vec_token->data[pos++])->ty != TK_INT){
-        fprintf(stderr,"関数の型がありません:%s\n",((Token *)vec_token->data[pos])->input);
+    /* 型チェック */
+    switch( ((Token *)vec_token->data[pos])->ty){
+        case TK_INT:
+            if(consume('[')){
+                if(((Token *)vec_token->data[pos])->ty ==TK_NUM){
+                    t->array_size=((Token *)vec_token->data[pos])->val;
+                    if(!consume(']')){
+                        fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+                        exit(1);
+                    }
+                }else{
+                    fprintf(stderr,"添え字じゃありません:%s\n",((Token *)vec_token->data[pos])->input);
+                    exit(1);
+                }
+            }
+            else{
+                t->ty = INT;//INT型
+                n->t = t;
+                pos++;
+            }
+            
+            break;
+        default:
+            fprintf(stderr,"型がありません:%s\n",((Token *)vec_token->data[pos])->input);
+            exit(1);
+    }
+
+    if(((Token *)vec_token->data[pos])->ty != TK_IDENT){
+        fprintf(stderr,"構文エラー:%c\n",((Token *)vec_token->data[pos])->ty);
         exit(1);
     }
-    /*関数名チェック*/
-    if(((Token *)vec_token->data[pos])->ty != TK_IDENT){
-        fprintf(stderr,"構文エラー:関数名がありません:%c\n",((Token *)vec_token->data[pos])->ty);
-        exit(1);
+
+    switch(((Token *)vec_token->data[pos+1])->ty){
+        case '(':
+            n->ty = ND_FUNC;
+            return n;
+        case ';':
+            n->ty   = ND_IDENT;
+            n->name = ((Token *)vec_token->data[pos])->name;
+            global_checkval(n);
+            pos+=2;
+            return n;
+        default:
+            fprintf(stderr,"例外構文エラー:%s\n",((Token *)vec_token->data[pos])->input);
+            exit(1);
+    }
+}
+
+Func *con(){ //パース
+
+    Node *ghead_result;
+    for(;;){
+        ghead_result = global_parse();
+        if(ghead_result->ty == ND_FUNC){ break; }
     }
     
     Func *func = new_func(((Token *)vec_token->data[pos++])->name);
@@ -414,7 +496,7 @@ Func *con(){//パース
                     
                     if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
                         node->ty   = ND_IDENT;
-                        node->name = ((Token *)vec_token->data[pos])->name;//変数名 
+                        node->name = ((Token *)vec_token->data[pos])->name; //変数名 
                         node->t = type;
                         pos++;
 	            	    func->valcnt += 1;
@@ -422,15 +504,14 @@ Func *con(){//パース
                         vec_push(func->args,(void *)node);
                         if(!map_get(func->map, node->name)){
                             Variable *t = calloc(1, sizeof(Variable));
-                            t->type   = node->t;
-                            t->offset = (void*)(intptr_t)(func->argcnt*8);
+                            t->type     = node->t;
+                            t->offset   = (void*)(intptr_t)(func->argcnt*8);
                             map_put(func->map, node->name, (void*)t);
                         }
                     }else{
                         fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
                         exit(1);
                     }
-                    
 	            }
             }
         }
@@ -455,6 +536,8 @@ Func *con(){//パース
 
 void funcsp(){
     vec_func = new_vector();
+    gval_cnt = malloc(sizeof(int));
+	global_map = new_map();
 
     while(((Token *)vec_token->data[pos])->ty != TK_EOF){
         vec_push(vec_func,(void *)con());
