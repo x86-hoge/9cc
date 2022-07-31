@@ -76,4 +76,6 @@ try 120 "int as[10];int asdf;int main(){asdf=12*100;asdf=asdf/10;asdf;}"
 try 30  "int gbl[10];int main(){gbl[0]=10;gbl[1]=20;gbl[2]=30;gbl[3]=30;gbl[3];}"
 try 65  "int main(){char asdf=65;}"
 try 65  "char as;int main(){char as=65;}"
+try 65  "char as;int main(){char as='A';}"
+try 3   "char as[10];int main(){char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y;}"
 echo OK

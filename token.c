@@ -118,6 +118,16 @@ void tokenize(char *p){
   			p += 6;
   			continue;
 		}
+		if(*p == '\''){
+			p++;
+			if(isalpha(*p) && *(p+1) == '\''){
+				vec_push(vec_token,(void *)new_token_num(TK_NUM,(int)*p,p));
+				p+=2;
+				continue;
+			}
+			fprintf(stderr,"文字ではありません: %s\n",p);
+			exit(1);
+		}
 
 		if(isalpha(*p)){ //文字探し
 			int strcnt=1;
