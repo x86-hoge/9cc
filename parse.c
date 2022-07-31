@@ -49,14 +49,14 @@ Type *new_type(){
     Type *type = malloc(sizeof(Type));
     return type;
 }
-Type *new_type_ptr(){
+Type *new_type_ptr(int type){
     Type *t1 = new_type();
     if(consume('*')){
         t1->ty = PTR;
-        t1->ptr_to = new_type_ptr(); 
+        t1->ptr_to = new_type_ptr(type); 
     }
     else{
-        t1->ty = INT;
+        t1->ty = type;
         }
     return t1;
 }
@@ -160,15 +160,19 @@ Node *term(){
         }
 		return node;
 	}
-    if(consume(TK_INT)){
+    if( ((Token *)vec_token->data[pos])->ty == TK_INT
+        || ((Token *)vec_token->data[pos])->ty == TK_CHAR ){
+        int t;
+        if(consume(TK_INT))t=INT;
+        if(consume(TK_CHAR))t=CHAR;
         Node *node = calloc(1, sizeof(Node));
         Type *type  = new_type();
 
         if(consume('*')){ 
             type->ty = PTR; 
-            type->ptr_to = new_type_ptr();
+            type->ptr_to = new_type_ptr(t);
         }
-        else{ type->ty = INT; }
+        else{ type->ty = t; }
         node->t = type;
         
         if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
@@ -394,7 +398,7 @@ void checkval(Node *node){
         }
         *val_cnt+=allosize;
         Variable *t = calloc(1, sizeof(Variable));
-        t->type   = node->t;
+        t->type  = node->t;
         t->scope = LOCAL;
         
         t->offset = (void*)(intptr_t)(*val_cnt * 8);
@@ -404,7 +408,7 @@ void checkval(Node *node){
 void checkglobalval(Node *node){
     if(!map_get(global_map,node->name)){
         Variable *t = calloc(1, sizeof(Variable));
-        t->type   = node->t;
+        t->type  = node->t;
         t->scope = GLOBAL;
         map_put(global_map, node->name, (void*)t);
     }
@@ -429,7 +433,7 @@ Node* checkTyping(Token *tk){
     }
     if(consume('*')){ 
         type->ty = PTR; 
-        type->ptr_to = new_type_ptr();
+        type->ptr_to = new_type_ptr(INT);
     }
     return node;
 }
@@ -481,7 +485,7 @@ Func *con(){ //パース
             Type *type  = new_type();
             if(consume('*')){ 
                 type->ty = PTR; 
-                type->ptr_to = new_type_ptr();
+                type->ptr_to = new_type_ptr(INT);
             }
             else
                 { type->ty = INT; }

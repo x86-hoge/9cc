@@ -65,7 +65,11 @@ void gen_lval(Node *node){
             fprintf(stderr,"未定義の変数です:%s\n",node->name);
             exit(1);
         }
-        printf("    lea rax, DWORD PTR %s[rip]\n", node->name);
+        if(get_ident_type(node)->ty == CHAR){
+            printf("    lea rax, BYTE PTR %s[rip]\n", node->name);
+        }else{
+            printf("    lea rax, DWORD PTR %s[rip]\n", node->name);
+        }
         printf("    push rax\n");
     }
 }
@@ -290,31 +294,22 @@ void gen(Node *node){
                     printf("    push rdi\n");
                     return;
             }
-            if( get_global_var(node->lhs) && ident_check(node->lhs) ){
-                gen(node->rhs);
-                printf("    pop rax\n");
-                printf("    mov DWORD PTR %s[rip], eax\n", node->lhs->name);
-                printf("    push rax\n");
-            }
-            else{
-                
-                if(node->lhs->ty == ND_IDENT){
-                    gen_lval(node->lhs);
-                    if(get_ident_type(node->lhs)->ty == PTR){
-                        ptr_gen(node->rhs,get_ident_type(node->lhs));
-                    }else{
-                        gen(node->rhs);
-                    }
-                }
-                else{
-                    gen_lval(node->lhs);
+            if(node->lhs->ty == ND_IDENT){
+                gen_lval(node->lhs);
+                if(get_ident_type(node->lhs)->ty == PTR){
+                    ptr_gen(node->rhs,get_ident_type(node->lhs));
+                }else{
                     gen(node->rhs);
                 }
-                printf("    pop rdi\n");
-                printf("    pop rax\n");
-                printf("    mov [rax], rdi\n");
-                printf("    push rdi\n");
             }
+            else{
+                gen_lval(node->lhs);
+                gen(node->rhs);
+            }
+            printf("    pop rdi\n");
+            printf("    pop rax\n");
+            printf("    mov [rax], rdi\n");
+            printf("    push rdi\n");
             return;
     }
     if(node->ty != ND_FUNC){

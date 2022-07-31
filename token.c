@@ -106,10 +106,10 @@ void tokenize(char *p){
   			p += 3;
   			continue;
 		}
-		if (strncmp(p, "char", 3) == 0 && !is_alnum(p[3])) {
+		if (strncmp(p, "char", 3) == 0 && !is_alnum(p[4])) {
 			vec_push(vec_token,(void *)new_token(TK_CHAR,p));
  			i++;
-  			p += 3;
+  			p += 4;
   			continue;
 		}
 		if (strncmp(p, "sizeof", 6) == 0 && !is_alnum(p[6])) {
