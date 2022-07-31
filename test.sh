@@ -72,4 +72,6 @@ try 8   "int main(){int a[10];a[0]=8;a[1]=2;a[2]=3;a[0];}"
 try 8   "int main(){int a[10];a[0]=8;a[1]=2;a[2]=3;0[a];}"
 try 8   "int gla; int glb;int main(){int a[10];a[0]=8;a[1]=2;a[2]=3;0[a];}"
 try 12  "int asdf;int main(){asdf=12;asdf;}"
+try 120 "int as[10];int asdf;int main(){asdf=12*100;asdf=asdf/10;asdf;}"
+try 30  "int gbl[10];int main(){gbl[0]=10;gbl[1]=20;gbl[2]=30;gbl[3]=30;gbl[3];}"
 echo OK

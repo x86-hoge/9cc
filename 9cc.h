@@ -16,6 +16,7 @@ enum{
 	TK_FOR,
 	TK_INT,
 	TK_SIZEOF,
+	TK_CHAR,
 };
 
 
@@ -60,7 +61,7 @@ typedef struct{
 typedef struct Node Node;
 
 typedef struct Type{
-	enum { INT, PTR, ARRAY} ty;
+	enum { INT, PTR, ARRAY, CHAR} ty;
   	struct Type *ptr_to;
 	size_t array_size;
 }Type;

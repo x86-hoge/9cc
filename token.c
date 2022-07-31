@@ -41,6 +41,10 @@ char *get_str(char *p){
 	return val;
 }
 
+// bool isreserved(char* str,sizeof l){
+// return strncmp(p, str, l) == 0 && !is_alnum(p[l])
+// }
+
 Vector *vec_token;
 
 void tokenize(char *p){
@@ -98,6 +102,12 @@ void tokenize(char *p){
 		}
 		if (strncmp(p, "int", 3) == 0 && !is_alnum(p[3])) {
 			vec_push(vec_token,(void *)new_token(TK_INT,p));
+ 			i++;
+  			p += 3;
+  			continue;
+		}
+		if (strncmp(p, "char", 3) == 0 && !is_alnum(p[3])) {
+			vec_push(vec_token,(void *)new_token(TK_CHAR,p));
  			i++;
   			p += 3;
   			continue;

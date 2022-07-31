@@ -26,8 +26,11 @@ int main(int argc,char **argv){
 			case PTR:
 				printf(".comm   %s,%d,%d\n",(char*)global_map->keys->data[i],8,8); 
 				break;
-			case ARRAY: 
+			case ARRAY:
 				printf(".comm   %s,%d,%d\n",(char*)global_map->keys->data[i],4,8); 
+				break;
+			case CHAR:
+				printf(".comm   %s,%d,%d\n",(char*)global_map->keys->data[i],1,1); 
 				break;
 			default: 
 				printf("ERROR\n");

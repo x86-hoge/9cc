@@ -10,6 +10,7 @@ Node *func(Node *node);
 Node *relational();
 void checkval(Node *node);
 
+
 Vector *vec_code;
 Map *val_map;
 int *val_cnt;
@@ -19,6 +20,8 @@ Vector *vec_func;
 
 Map *global_map;
 int *gval_cnt;
+
+
 
 Func *new_func(char *name){
     val_func = name;
@@ -149,10 +152,10 @@ Node *term(){
 			vec_push(vec,(void *)NULL);
 			node->args = vec;
 		}
-        /*添え字として処理*/
+        /* 添え字処理 */
         else if(((Token *)vec_token->data[pos])->ty == '['){
             Node *index_node = term();
-            Node *add_node = new_node('+',node,index_node);
+            Node *add_node   = new_node('+',node,index_node);
             return new_node(ND_DEREF,add_node,NULL);
         }
 		return node;
@@ -398,127 +401,110 @@ void checkval(Node *node){
         map_put(val_map, node->name, (void*)t);
     }
 }
-void global_checkval(Node *node){
+void checkglobalval(Node *node){
     if(!map_get(global_map,node->name)){
-        int allosize = 1;
-        if(node->t->ty == ARRAY){
-           allosize = (node->t->array_size);
-        }
-        *gval_cnt += allosize;
         Variable *t = calloc(1, sizeof(Variable));
         t->type   = node->t;
         t->scope = GLOBAL;
-        
-        t->offset = (void*)(intptr_t)(*gval_cnt * 8);
         map_put(global_map, node->name, (void*)t);
     }
 }
 
-
-Node *global_parse(){
-    Node *n = calloc(1, sizeof(Node));
-    Type *t = new_type();
-
-    /* 型チェック */
-    switch( ((Token *)vec_token->data[pos])->ty){
+/* 型チェック */
+Node* checkTyping(Token *tk){
+    Node *node = calloc(1, sizeof(Node));
+    Type *type = new_type();
+    switch(tk->ty){
         case TK_INT:
-            if(consume('[')){
-                if(((Token *)vec_token->data[pos])->ty ==TK_NUM){
-                    t->array_size=((Token *)vec_token->data[pos])->val;
-                    if(!consume(']')){
-                        fprintf(stderr,"開きカッコに対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
-                        exit(1);
-                    }
-                }else{
-                    fprintf(stderr,"添え字じゃありません:%s\n",((Token *)vec_token->data[pos])->input);
-                    exit(1);
-                }
-            }
-            else{
-                t->ty = INT;//INT型
-                n->t = t;
-                pos++;
-            }
-            
-            break;
+            type->ty = INT;
+            node->t  = type;
+        break;
+        case TK_CHAR:
+            type->ty = CHAR;
+            node->t  = type; 
+        break;
         default:
             fprintf(stderr,"型がありません:%s\n",((Token *)vec_token->data[pos])->input);
             exit(1);
     }
-
-    if(((Token *)vec_token->data[pos])->ty != TK_IDENT){
-        fprintf(stderr,"構文エラー:%c\n",((Token *)vec_token->data[pos])->ty);
-        exit(1);
+    if(consume('*')){ 
+        type->ty = PTR; 
+        type->ptr_to = new_type_ptr();
     }
-
-    switch(((Token *)vec_token->data[pos+1])->ty){
-        case '(':
-            n->ty = ND_FUNC;
-            return n;
-        case ';':
-            n->ty   = ND_IDENT;
-            n->name = ((Token *)vec_token->data[pos])->name;
-            global_checkval(n);
-            pos+=2;
-            return n;
-        default:
-            fprintf(stderr,"例外構文エラー:%s\n",((Token *)vec_token->data[pos])->input);
-            exit(1);
+    return node;
+}
+char *ident(){
+    if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
+        return ((Token *)vec_token->data[pos++])->name;
     }
+    fprintf(stderr,"有効な名前ではありません:%s\n",((Token *)vec_token->data[pos])->input);
+    exit(1);
 }
 
-Func *con(){ //パース
 
-    Node *ghead_result;
+
+Func *con(){ //パース
+    char *name;
     for(;;){
-        ghead_result = global_parse();
-        if(ghead_result->ty == ND_FUNC){ break; }
-    }
-    
-    Func *func = new_func(((Token *)vec_token->data[pos++])->name);
-    val_map  = func->map;       //変数マップ
-    val_cnt  = &(func->valcnt); //変数カウント
-    vec_code = func->code;     //コード格納
-    
-    /*引数チェック*/
-    if(consume('(')){
-        if(!consume(')')){
-            while(!consume(')')){
-                if(consume(TK_INT)){
-                    Node *node = calloc(1, sizeof(Node));
-                    Type *type  = new_type();
-                    if(consume('*')){ 
-                        type->ty = PTR; 
-                        type->ptr_to = new_type_ptr();
-                    }
-                    else
-                        { type->ty = INT; }
-                    
-                    if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
-                        node->ty   = ND_IDENT;
-                        node->name = ((Token *)vec_token->data[pos])->name; //変数名 
-                        node->t = type;
-                        pos++;
-	            	    func->valcnt += 1;
-                        func->argcnt += 1;
-                        vec_push(func->args,(void *)node);
-                        if(!map_get(func->map, node->name)){
-                            Variable *t = calloc(1, sizeof(Variable));
-                            t->type     = node->t;
-                            t->offset   = (void*)(intptr_t)(func->argcnt*8);
-                            map_put(func->map, node->name, (void*)t);
-                        }
-                    }else{
-                        fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
-                        exit(1);
-                    }
-	            }
+        Node *node = checkTyping((Token *)vec_token->data[pos++]);
+        name = ident();
+        node->ty   = ND_IDENT;
+        node->name = name;
+        if(consume('[')){
+            node->t->ty = ARRAY;
+            if(((Token *)vec_token->data[pos])->ty == TK_NUM){
+                node->t->array_size = ((Token *)vec_token->data[pos++])->val;
+            }
+            if(!consume(']')){
+                fprintf(stderr,"対応する閉じカッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+                exit(1);
             }
         }
-    }
-    else{
-        fprintf(stderr,"関数構文エラー:カッコがありません:%s\n",((Token *)vec_token->data[pos])->input);
+        if(consume(';')){
+            checkglobalval(node);
+            continue;
+        }
+        if(consume('(')){ break; }
+        fprintf(stderr,"例外構文エラー:%s\n",((Token *)vec_token->data[pos])->input);
         exit(1);
+    }
+    
+    Func *func = new_func(name);
+    val_map  = func->map;       /* 変数マップ */
+    val_cnt  = &(func->valcnt); /* 変数カウント */
+    vec_code = func->code;     /* コード格納 */
+    
+    /*引数チェック*/
+    while(!consume(')')){
+        if(consume(TK_INT)){
+            Node *node = calloc(1, sizeof(Node));
+            Type *type  = new_type();
+            if(consume('*')){ 
+                type->ty = PTR; 
+                type->ptr_to = new_type_ptr();
+            }
+            else
+                { type->ty = INT; }
+            
+            if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
+                node->ty   = ND_IDENT;
+                node->name = ((Token *)vec_token->data[pos])->name; /* 変数名 */
+                node->t = type;
+                pos++;
+	    	    func->valcnt += 1;
+                func->argcnt += 1;
+                vec_push(func->args,(void *)node);
+                if(!map_get(func->map, node->name)){
+                    Variable *t = calloc(1, sizeof(Variable));
+                    t->type     = node->t;
+                    t->offset   = (void*)(intptr_t)(func->argcnt*8);
+                    map_put(func->map, node->name, (void*)t);
+                }
+            }else{
+                fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
+                exit(1);
+            }
+	    }
     }
     if(consume('{')){
         program();//パース
