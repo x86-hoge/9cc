@@ -15,8 +15,9 @@ enum{
 	TK_WHILE,
 	TK_FOR,
 	TK_INT,
-	TK_SIZEOF,
 	TK_CHAR,
+	TK_SIZEOF,
+	TK_STR,
 };
 
 
@@ -26,6 +27,9 @@ typedef struct {
 	int val;
 	char *input;
 	char *name;
+	char *str;
+	
+
 }Token;
 
 enum{
@@ -48,6 +52,7 @@ enum{
 	ND_ADDR,
 	ND_DEREF,
 	ND_INT,
+	ND_STR,
 };
 
 extern int pos;
@@ -136,6 +141,8 @@ extern Vector *vec_token;//トークンを格納する
 
 extern Vector *vec_func;//関数単位を格納する
 
+extern Vector *vec_str;//文字列単位を格納する
+
 Map *new_map();
 
 void map_put(Map *map, char *key, void *val);
@@ -167,3 +174,5 @@ void funcsp();
 extern Map *global_map;//ローカル変数マップ
 
 extern int *gval_cnt;
+
+extern int strlabel;

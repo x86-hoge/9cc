@@ -77,5 +77,9 @@ try 30  "int gbl[10];int main(){gbl[0]=10;gbl[1]=20;gbl[2]=30;gbl[3]=30;gbl[3];}
 try 65  "int main(){char asdf=65;}"
 try 65  "char as;int main(){char as=65;}"
 try 65  "char as;int main(){char as='A';}"
+try 65  "int main(){int as=65;return as;}"
 try 3   "char as[10];int main(){char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y;}"
+try 66  "int main(){char *a;a=\"AAB\";return a[2];}"
+try 90  "int main(){char *a;a=\"AZB\";return a[1];}"
+try 65  "int main(){char *a;a=\"AZB\";return a[0];}"
 echo OK

@@ -17,9 +17,11 @@ int *val_cnt;
 char *val_func;
 int pos=0;
 Vector *vec_func;
+Vector *vec_str;
 
 Map *global_map;
 int *gval_cnt;
+int strlabel = 0;
 
 
 
@@ -88,7 +90,17 @@ Vector *new_vector_stmts(){
     vec_push(vec,(void *)NULL);
     return vec;
 }
+Node *new_node_str(int l){
+    char buf[1024];
+    int lsize = sprintf(buf,"%d",l)+3;
+    char *name = malloc((sizeof(char)*lsize));
+    Node *node = malloc(sizeof(Node));
 
+    sprintf(name, ".LC%d",l);
+    node->ty = ND_STR;
+    node->name=name;
+    return node;
+}
 
 Vector *new_vector(){
     Vector *vec = malloc(sizeof(Vector));
@@ -130,7 +142,7 @@ Node *term(){
         }
         return index_node;
     }
-
+    /* 数値 */
     if(((Token *)vec_token->data[pos])->ty == TK_NUM){
 		 Node *node = new_node_num(((Token *)vec_token->data[pos++])->val);//数値
         if(((Token *)vec_token->data[pos])->ty == '['){
@@ -140,7 +152,12 @@ Node *term(){
         }
         return node;
 	}
-
+    /* 文字列 */
+    if(((Token *)vec_token->data[pos])->ty == TK_STR){
+		vec_push(vec_str,(void *)((Token *)vec_token->data[pos++])->str); 
+        return  new_node_str(strlabel++);
+	}
+    /* 変数 */
     if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
         Node *node = new_node_ident(((Token *)vec_token->data[pos++])->name);
 		Vector *vec = new_vector();
@@ -526,6 +543,7 @@ Func *con(){ //パース
 
 void funcsp(){
     vec_func = new_vector();
+    vec_str = new_vector();
     gval_cnt = malloc(sizeof(int));
 	global_map = new_map();
 

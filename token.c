@@ -21,6 +21,13 @@ Token *new_token_ident(int ty,char* input,char* name){
 	tkn->name=name;
 	return tkn;
 }
+Token *new_token_str(int ty,char* input,char* str){
+	Token *tkn = malloc(sizeof(Token));
+	tkn->ty=ty;
+	tkn->input=input;
+	tkn->str=str;
+	return tkn;
+}
 
 int is_alnum(char c) {
 //   return ('a' <= c && c <= 'z') ||
@@ -127,6 +134,18 @@ void tokenize(char *p){
 			}
 			fprintf(stderr,"文字ではありません: %s\n",p);
 			exit(1);
+		}
+		if(*p == '\"'){
+			int strcnt=1;
+			p++;
+			while(p[strcnt] != '\"')strcnt++;
+			char *val=malloc(sizeof(char) * strcnt+1);
+			strncpy(val,p,strcnt);//変数名部分をトークン化
+			val[strcnt]='\0';//終端
+			vec_push(vec_token,(void *)new_token_str(TK_STR,p,val));
+			i++;
+			p+=strcnt+1;
+			continue;
 		}
 
 		if(isalpha(*p)){ //文字探し

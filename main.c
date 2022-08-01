@@ -37,7 +37,10 @@ int main(int argc,char **argv){
 				exit(1);
 		}
 	}
-
+	for(int i=0;vec_str->data[i];i++){
+		printf(".LC%d:\n",i);
+		printf("    .string \"%s\"\n",(char*)vec_str->data[i]);
+	}
 	for(int i=0;vec_func->data[i];i++){
 		func_gen((Func *)vec_func->data[i]);
 	}

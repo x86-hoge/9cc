@@ -2,7 +2,9 @@
 static char *rgsr[6]={"rdi","rsi","rdx","rcx","r8","r9"};//レジスタ一覧
 Map *local_map;
 Map *global_map;
+Vector *vec_str;
 int branch_label_no = 0;
+
 void gen(Node *node);
 void ptr_gen(Node *node,Type *t);
 void set_valmap(Map *map){
@@ -119,6 +121,11 @@ void ptr_gen(Node *node,Type *t){
             gen_lval(node->lhs);
             return;
 
+        case ND_STR:
+            printf("    lea rax,%s[rip]\n",node->name);
+            printf("    push rax\n");
+            return;
+
         case ND_DEREF:
             gen(node->lhs);
             printf("    pop rax\n");
@@ -212,6 +219,11 @@ void gen(Node *node){
             gen_lval(node->lhs);
             return;
 
+        case ND_STR:
+            printf("    lea rax,%s[rip]\n",node->name);
+            printf("    push rax\n");
+            return;
+
         case ND_DEREF:
             gen(node->lhs);
             printf("    pop rax\n");
@@ -286,13 +298,13 @@ void gen(Node *node){
 
         case '=':
             if(node->lhs->ty == ND_DEREF){
-                    gen(node->lhs->lhs);
-                    gen(node->rhs);
-                    printf("    pop rdi\n");
-                    printf("    pop rax\n");
-                    printf("    mov [rax], rdi\n");
-                    printf("    push rdi\n");
-                    return;
+                gen(node->lhs->lhs);
+                gen(node->rhs);
+                printf("    pop rdi\n");
+                printf("    pop rax\n");
+                printf("    mov [rax], rdi\n");
+                printf("    push rdi\n");
+                return;
             }
             if(node->lhs->ty == ND_IDENT){
                 gen_lval(node->lhs);
