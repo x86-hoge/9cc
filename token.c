@@ -63,6 +63,20 @@ void tokenize(char *p){
 			p++;
 			continue;
 		}
+		if(strncmp(p, "//",2) == 0){
+			p+=2;
+			while(*p != '\n')p++;
+			continue;
+		}
+		if (strncmp(p, "/*", 2) == 0) {
+      		char *q = strstr(p + 2, "*/");
+      		if (!q){
+				fprintf(stderr,"コメントが閉じられていません: %s\n",p);
+				exit(1);
+			}
+      		p = q + 2;
+      		continue;
+    	}
 
 		if(strchr("+-*/;=()!{}<>&[]",*p)){
 			vec_push(vec_token,(void *)new_token(*p,p));
