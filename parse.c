@@ -422,6 +422,7 @@ void checkval(Node *node){
         map_put(val_map, node->name, (void*)t);
     }
 }
+
 void checkglobalval(Node *node){
     if(!map_get(global_map,node->name)){
         Variable *t = calloc(1, sizeof(Variable));
@@ -463,7 +464,6 @@ char *ident(){
 }
 
 
-
 Func *con(){ //パース
     char *name;
     for(;;){
@@ -497,35 +497,24 @@ Func *con(){ //パース
     
     /*引数チェック*/
     while(!consume(')')){
-        if(consume(TK_INT)){
-            Node *node = calloc(1, sizeof(Node));
-            Type *type  = new_type();
-            if(consume('*')){ 
-                type->ty = PTR; 
-                type->ptr_to = new_type_ptr(INT);
+        Node *node = checkTyping((Token *)vec_token->data[pos++]);
+        if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
+            node->ty   = ND_IDENT;
+            node->name = ((Token *)vec_token->data[pos])->name; /* 変数名 */
+            pos++;
+		    func->valcnt += 1;
+            func->argcnt += 1;
+            vec_push(func->args,(void *)node);
+            if(!map_get(func->map, node->name)){
+                Variable *t = calloc(1, sizeof(Variable));
+                t->type     = node->t;
+                t->offset   = (void*)(intptr_t)(func->argcnt*8);
+                map_put(func->map, node->name, (void*)t);
             }
-            else
-                { type->ty = INT; }
-            
-            if(((Token *)vec_token->data[pos])->ty == TK_IDENT){
-                node->ty   = ND_IDENT;
-                node->name = ((Token *)vec_token->data[pos])->name; /* 変数名 */
-                node->t = type;
-                pos++;
-	    	    func->valcnt += 1;
-                func->argcnt += 1;
-                vec_push(func->args,(void *)node);
-                if(!map_get(func->map, node->name)){
-                    Variable *t = calloc(1, sizeof(Variable));
-                    t->type     = node->t;
-                    t->offset   = (void*)(intptr_t)(func->argcnt*8);
-                    map_put(func->map, node->name, (void*)t);
-                }
-            }else{
-                fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
-                exit(1);
-            }
-	    }
+        }else{
+            fprintf(stderr,"変数名が不正です:%s\n",((Token *)vec_token->data[pos])->input);
+            exit(1);
+        }
     }
     if(consume('{')){
         program();//パース

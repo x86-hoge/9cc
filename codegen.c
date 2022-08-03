@@ -77,7 +77,7 @@ void gen_lval(Node *node){
 }
 
 void gen_cmp(char *op){
-    printf("    cmp rax, rdi\n");
+    printf("    cmp rax, r10\n");
     printf("    %s al\n",op);
     printf("    movzb rax, al\n");
 }
@@ -96,14 +96,14 @@ void ptr_gen(Node *node,Type *t){
             if(t->ptr_to->ty == INT){
                 printf("    pop rax\n");
                 printf("    push 4\n");
-                printf("    pop rdi\n");
-                printf("    mul rdi\n");
+                printf("    pop r10\n");
+                printf("    mul r10\n");
                 printf("    push rax\n");
             }
             else{
                 printf("    pop rax\n");
                 printf("    push 8\n");
-                printf("    pop rdi\n");
+                printf("    pop r10\n");
                 printf("    push rax\n");
             }
             return;
@@ -155,7 +155,7 @@ void ptr_gen(Node *node,Type *t){
         else
             { gen(node->rhs); }
     }
-    printf("    pop rdi\n");
+    printf("    pop r10\n");
     printf("    pop rax\n");
 
     switch(node->ty){
@@ -172,17 +172,17 @@ void ptr_gen(Node *node,Type *t){
             gen_cmp("setl");
             break;
         case '+':
-            printf("    add rax, rdi\n");
+            printf("    add rax, r10\n");
             break;
         case '-':
-            printf("    sub rax, rdi\n");
+            printf("    sub rax, r10\n");
             break;
         case '*':
-            printf("    mul rdi\n");
+            printf("    mul r10\n");
             break;
         case '/':
             printf("    mov rdx, 0\n");
-            printf("    div rdi\n");
+            printf("    div r10\n");
     }
     printf("    push rax\n");
 }
@@ -300,10 +300,10 @@ void gen(Node *node){
             if(node->lhs->ty == ND_DEREF){
                 gen(node->lhs->lhs);
                 gen(node->rhs);
-                printf("    pop rdi\n");
+                printf("    pop r10\n");
                 printf("    pop rax\n");
-                printf("    mov [rax], rdi\n");
-                printf("    push rdi\n");
+                printf("    mov [rax], r10\n");
+                printf("    push r10\n");
                 return;
             }
             if(node->lhs->ty == ND_IDENT){
@@ -318,10 +318,10 @@ void gen(Node *node){
                 gen_lval(node->lhs);
                 gen(node->rhs);
             }
-            printf("    pop rdi\n");
+            printf("    pop r10\n");
             printf("    pop rax\n");
-            printf("    mov [rax], rdi\n");
-            printf("    push rdi\n");
+            printf("    mov [rax], r10\n");
+            printf("    push r10\n");
             return;
     }
     if(node->ty != ND_FUNC){
@@ -329,7 +329,7 @@ void gen(Node *node){
         gen(node->rhs);
     }
 
-    printf("    pop rdi\n");
+    printf("    pop r10\n");
     printf("    pop rax\n");
 
     switch(node->ty){
@@ -346,17 +346,17 @@ void gen(Node *node){
             gen_cmp("setl");
             break;
         case '+':
-            printf("    add rax, rdi\n");
+            printf("    add rax, r10\n");
             break;
         case '-':
-            printf("    sub rax, rdi\n");
+            printf("    sub rax, r10\n");
             break;
         case '*':
-            printf("    mul rdi\n");
+            printf("    mul r10\n");
             break;
         case '/':
             printf("    mov rdx, 0\n");
-            printf("    div rdi\n");
+            printf("    div r10\n");
     }
     printf("    push rax\n");
 }
